@@ -1,0 +1,145 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="format-detection" content="telephone=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><link rel="icon" href="/images/icons/favicon-16x16.png?v=2.6.2" type="image/png" sizes="16x16"><link rel="icon" href="/images/icons/favicon-32x32.png?v=2.6.2" type="image/png" sizes="32x32"><meta name="description" content="js引擎是浏览器的组成部分之一，因为浏览器还要做其他的很多事情，比如解析和渲染页面、cookie管理、网络请求、历史记录管理等等，你可以把js引擎看成是其中最重要的一个线程之一，负责用来解释和执行代码。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="js引擎工作原理">
+<meta property="og:url" content="http://example.com/2021/02/20/js%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="Ivan Shork">
+<meta property="og:description" content="js引擎是浏览器的组成部分之一，因为浏览器还要做其他的很多事情，比如解析和渲染页面、cookie管理、网络请求、历史记录管理等等，你可以把js引擎看成是其中最重要的一个线程之一，负责用来解释和执行代码。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/images/post_img/20200818165714521.png">
+<meta property="article:published_time" content="2021-02-20T02:55:13.000Z">
+<meta property="article:modified_time" content="2021-02-20T06:46:46.789Z">
+<meta property="article:author" content="Ivan">
+<meta property="article:tag" content="js">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/post_img/20200818165714521.png"><title>js引擎工作原理 | Ivan Shork</title><link ref="canonical" href="http://example.com/2021/02/20/js%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.12.1/css/all.min.css" type="text/css"><link rel="stylesheet" href="/css/index.css?v=2.6.2"><script>var Stun = window.Stun || {};
+var CONFIG = {
+  root: '/',
+  algolia: undefined,
+  assistSearch: undefined,
+  fontIcon: {"prompt":{"success":"fas fa-check-circle","info":"fas fa-arrow-circle-right","warning":"fas fa-exclamation-circle","error":"fas fa-times-circle"},"copyBtn":"fas fa-copy"},
+  sidebar: {"offsetTop":"20px","tocMaxDepth":6},
+  header: {"enable":true,"showOnPost":false,"scrollDownIcon":false},
+  postWidget: {"endText":true},
+  nightMode: {"enable":true},
+  back2top: {"enable":true},
+  codeblock: {"style":"default","highlight":"light","wordWrap":false},
+  reward: false,
+  fancybox: false,
+  zoomImage: {"gapAside":"20px"},
+  galleryWaterfall: undefined,
+  lazyload: false,
+  pjax: undefined,
+  externalLink: {"icon":{"enable":true,"name":"fas fa-external-link-alt"}},
+  shortcuts: undefined,
+  prompt: {"copyButton":"Copy","copySuccess":"Copy Success","copyError":"Copy Error"},
+  sourcePath: {"js":"js","css":"css","images":"images"},
+};
+
+window.CONFIG = CONFIG;</script><meta name="generator" content="Hexo 5.3.0"></head><body><div class="container" id="container"><header class="header" id="header"><div class="header-inner header-inner--height header-inner--bgcolor"><nav class="header-nav header-nav--sticky"><div class="header-nav-inner"><div class="header-nav-menubtn"><i class="fas fa-bars"></i></div><div class="header-nav-menu"><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/"><span class="header-nav-menu-item__icon"><i class="fas fa-home"></i></span><span class="header-nav-menu-item__text">Home</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/archives/"><span class="header-nav-menu-item__icon"><i class="fas fa-folder-open"></i></span><span class="header-nav-menu-item__text">Archives</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/tags/"><span class="header-nav-menu-item__icon"><i class="fas fa-tags"></i></span><span class="header-nav-menu-item__text">Tags</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/my-info/"><span class="header-nav-menu-item__icon"><i class="fas fa-info"></i></span><span class="header-nav-menu-item__text">Me</span></a></div></div><div class="header-nav-mode"><div class="mode"><div class="mode-track"><span class="mode-track-moon"></span><span class="mode-track-sun"></span></div><div class="mode-thumb"></div></div></div></div></nav></div></header><main class="main" id="main"><div class="main-inner"><div class="content-wrap" id="content-wrap"><div class="content" id="content"><!-- Just used to judge whether it is an article page--><div id="is-post"></div><div class="post"><header class="post-header"><h1 class="post-title">js引擎工作原理</h1><div class="post-meta"><span class="post-meta-item post-meta-item--createtime"><span class="post-meta-item__icon"><i class="far fa-calendar-plus"></i></span><span class="post-meta-item__info">创建时间</span><span class="post-meta-item__value">2021-02-20</span></span><span class="post-meta-item post-meta-item--updatetime"><span class="post-meta-item__icon"><i class="far fa-calendar-check"></i></span><span class="post-meta-item__info">更新时间</span><span class="post-meta-item__value">2021-02-20</span></span><span class="post-meta-item post-meta-item--wordcount"><span class="post-meta-item__icon"><i class="far fa-file-word"></i></span><span class="post-meta-item__info">字数统计</span><span class="post-meta-item__value">2.1k</span></span><span class="post-meta-item post-meta-item--readtime"><span class="post-meta-item__icon"><i class="far fa-clock"></i></span><span class="post-meta-item__info">阅读时间</span><span class="post-meta-item__value">11m</span></span></div></header><div class="post-body">
+        <h1 id="铿锵三人行"   >
+          <a href="#铿锵三人行" class="heading-link"><i class="fas fa-link"></i></a><a href="#铿锵三人行" class="headerlink" title="铿锵三人行"></a>铿锵三人行</h1>
+      <pre><code>我们知道js是弱类型的、动态性的语言，其中动态性指的是js引擎的编译工作是在运行前编译的，而不是和传统的C、C++一样是提前编译好的。
+所以我们常说js是一门解释性语言，因为它不是预先编译成二进制文件执行的。
+</code></pre>
+
+        <h2 id="js编译的流程"   >
+          <a href="#js编译的流程" class="heading-link"><i class="fas fa-link"></i></a><a href="#js编译的流程" class="headerlink" title="js编译的流程"></a>js编译的流程</h2>
+      <p>程序中的一段源代码在执行前，要先经历三个步骤。</p>
+<p>我们先来看一个最简单的代码块</p>
+
+        <h3 id="1-分词-词法分析"   >
+          <a href="#1-分词-词法分析" class="heading-link"><i class="fas fa-link"></i></a><a href="#1-分词-词法分析" class="headerlink" title="1.分词/词法分析"></a>1.分词/词法分析</h3>
+      <p>将字符串分解成有意义的代码块，这些代码块就被称为词法单元。</p>
+<figure class="highlight js"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> a = <span class="string">&#x27;2&#x27;</span>;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">*  词法分析后,就被分解成下面的词法单元：</span></span><br><span class="line"><span class="comment">* 	var 、 a 、 = 、 2 、 ; </span></span><br><span class="line"><span class="comment">*  至于空格是否被当做词法单元，这个取决于空格在这门语言中是否具有意义</span></span><br><span class="line"><span class="comment">**/</span></span><br></pre></td></tr></table></div></figure>
+
+        <h3 id="2-解析-语法分析"   >
+          <a href="#2-解析-语法分析" class="heading-link"><i class="fas fa-link"></i></a><a href="#2-解析-语法分析" class="headerlink" title="2.解析/语法分析"></a>2.解析/语法分析</h3>
+      <p>将词法单元流（数组）转换为一个抽象语法树（AST），这个树是由元素逐级嵌套并代表了程序语法结构的树<br><img src="/images/post_img/20200818165714521.png"></p>
+
+        <h3 id="3-代码生成"   >
+          <a href="#3-代码生成" class="heading-link"><i class="fas fa-link"></i></a><a href="#3-代码生成" class="headerlink" title="3.代码生成"></a>3.代码生成</h3>
+      <p>将AST(抽象语法树)转换为可执行的代码，这个过程就是代码生成</p>
+<p>简单的来说就是通过某种方法将var a = 2的AST转换为一组机器指令，这个机器指令可以用来创建一个叫做a的变量（包括分配内存等），并将一个值存储在a中</p>
+<p>除此之外，js引擎的编译器要比其他语言的编译器要复杂的多。<br>比如在做语法分析和代码生成阶段会有特定的步骤来对运行性能进行优化，包括对冗余元素进行优化等。</p>
+
+        <h2 id="js引擎的两个小伙伴"   >
+          <a href="#js引擎的两个小伙伴" class="heading-link"><i class="fas fa-link"></i></a><a href="#js引擎的两个小伙伴" class="headerlink" title="js引擎的两个小伙伴"></a>js引擎的两个小伙伴</h2>
+      <p>从js引擎的整个编译和执行流程来看，我们不得不提及其他两个小伙伴，也就是编译器和作用域。</p>
+
+        <h3 id="js引擎"   >
+          <a href="#js引擎" class="heading-link"><i class="fas fa-link"></i></a><a href="#js引擎" class="headerlink" title="js引擎"></a>js引擎</h3>
+      <p>从头到尾的负责整个JavaScript程序的编译和执行</p>
+<blockquote>
+<p>它是掌控整个局面的老大，包括对全局对象的管理、对执行上下文栈的管理，对事件的轮询等等</p>
+</blockquote>
+
+        <h3 id="编译器"   >
+          <a href="#编译器" class="heading-link"><i class="fas fa-link"></i></a><a href="#编译器" class="headerlink" title="编译器"></a>编译器</h3>
+      <p>负责词法分析、语法分析及代码生成</p>
+<blockquote>
+<p>任何js代码片段在执行前都要进行编译（通常就是在执行前）</p>
+</blockquote>
+<figure class="highlight js"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 编译器首先对 var a = 2 进行编译  ==》词法分析 和 语法分析</span></span><br><span class="line"><span class="comment">// 然后做好执行它的准备。（通常是马上就会执行它） ==》 代码生成</span></span><br><span class="line"><span class="comment">// js引擎开始执行代码</span></span><br><span class="line"><span class="keyword">var</span> a = <span class="number">2</span></span><br></pre></td></tr></table></div></figure>
+
+        <h3 id="作用域"   >
+          <a href="#作用域" class="heading-link"><i class="fas fa-link"></i></a><a href="#作用域" class="headerlink" title="作用域"></a>作用域</h3>
+      <p>收集并维护所有声明的标识符（变量），并根据一套非常严格的规则，确定当前执行的代码对这些标识符的访问权限</p>
+<blockquote>
+<p>作用域说白了就是一个规则，它包含了当前代码区块所能访问到的变量，告诉编译器变量（标识符）在何处以及如何访问它们。<br>并根据当前代码决定对变量进行LHS查询还是RHS查询</p>
+</blockquote>
+<hr>
+<p>结合这三个重要的角色，让我们重新回顾一下 var a = 2 发生了什么？</p>
+<ol>
+<li>遇到var a = 2，首先编译器对这行代码进行分词（词法分析），将字符序列转化成一个个单词序列，也就是词法单元。</li>
+<li>编译器对上一步得到的词法单元再进行语法分析，得到了一个抽象语法树，一个能够表明程序结构的树。</li>
+<li>编译器根据抽象语法树生成可执行的代码（= 1），等待交给js引擎执行，这个过程涉及到LHS引用和RHS引用。</li>
+<li>js引擎执行编译器生成的代码，此时它会询问作用域当前作用域下是否存在一个名为a的变量。<br>如果没有，则向上一层作用域继续查找。如果有，引擎为变量名为a的集合进行 = 1 的赋值。</li>
+</ol>
+
+        <h2 id="引擎和作用域的对话？"   >
+          <a href="#引擎和作用域的对话？" class="heading-link"><i class="fas fa-link"></i></a><a href="#引擎和作用域的对话？" class="headerlink" title="引擎和作用域的对话？"></a>引擎和作用域的对话？</h2>
+      <pre><code>引擎在运行的时候，会自己维护一个执行上下文栈，而全局环境的执行上下文会首先压入栈底，其次是函数的执行上下文。
+执行上下文中包含当前代码环境的变量对象、this、作用域等。而引擎和作用域的交互是代码运行的一个至关重要的环节。
+</code></pre>
+
+        <h3 id="LHS引用和RHS引用"   >
+          <a href="#LHS引用和RHS引用" class="heading-link"><i class="fas fa-link"></i></a><a href="#LHS引用和RHS引用" class="headerlink" title="LHS引用和RHS引用"></a>LHS引用和RHS引用</h3>
+      <p>说到两者的交互，我们首先得来谈谈LHS引用和RHS引用，两者都是对变量的引用。<br>在这里我们可以粗俗的理解为LHS为”赋值操作左边的引用”，而RHS为”赋值操作右边的引用”。L是left，R是right。</p>
+<p><strong>LHS</strong></p>
+<p>变量在赋值操作的左侧会进行LHS查询</p>
+<p><strong>RHS</strong></p>
+<p>变量在赋值操作的非左侧会进行RHS查询</p>
+<figure class="highlight js"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> b = <span class="number">2</span></span><br><span class="line"><span class="keyword">var</span> a = b</span><br><span class="line"><span class="comment">// 引擎在执行 b = 2 这行代码的时候，会在当前作用域对 b 进行 LHS 查询，如果查找得到，就对 b 进行赋值</span></span><br><span class="line"><span class="comment">// 引擎读到 b 的时候，先在当前作用域对 b 进行 RHS 查询，如果查找得到则返回到当前环境，继续进行赋值操作，查找不到就报错</span></span><br><span class="line"><span class="comment">// 引擎在 a = b 这行代码的时候，会在当前作用域对 a 进行 LHS 查询，如果查找得到，就对 a 进行赋值</span></span><br></pre></td></tr></table></div></figure>
+<p>上面的例子只是对LHS引用和RHS引用的一个小小演示，具体的实际引用情况比这复杂得多。</p>
+<p>下面引用《你不知道的javascript》中的例子：</p>
+<figure class="highlight js"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">foo</span>(<span class="params">a</span>) </span>&#123;</span><br><span class="line"><span class="built_in">console</span>.log( a ); <span class="comment">// 2</span></span><br><span class="line">&#125;</span><br><span class="line">foo( <span class="number">2</span> );</span><br></pre></td></tr></table></div></figure>
+<p>引擎：我说作用域，我需要为 foo 进行RHS引用。你见过它吗？<br>作用域：别说，我还真见过，编译器那小子刚刚声明了它。它是一个函数，给你。<br>引擎：哥们太够意思了！好吧，我来执行一下 foo 。<br>引擎：作用域，还有个事儿。我需要为 a 进行LHS引用，这个你见过吗？<br>作用域：这个也见过，编译器最近把它声名为 foo 的一个形式参数了，拿去吧。<br>引擎：大恩不言谢，你总是这么棒。现在我要把 2 赋值给 a 。<br>引擎：哥们，不好意思又来打扰你。我要为 console 进行RHS引用，你见过它吗？<br>作用域：咱俩谁跟谁啊，再说我就是干这个。这个我也有， console 是个内置对象。<br>给你。<br>引擎：么么哒。我得看看这里面是不是有 log(..) 。太好了，找到了，是一个函数。<br>引擎：哥们，能帮我再找一下对 a 的RHS引用吗？虽然我记得它，但想再确认一次。<br>作用域：放心吧，这个变量没有变动过，拿走，不谢。<br>引擎：真棒。我来把 a 的值，也就是 2 ，传递进 log(..) 。</p>
+
+        <h3 id="变量查找"   >
+          <a href="#变量查找" class="heading-link"><i class="fas fa-link"></i></a><a href="#变量查找" class="headerlink" title="变量查找"></a>变量查找</h3>
+      <p>无论如何，引擎对变量的引用，都是从当前执行上下文的作用域开始的。<br>如果找不到，则在当前作用域链上不断攀升查找，甚至抵达最外层的作用域（全局作用域），直到找到该变量为止。</p>
+<p>⚠️在严格模式下，需要注意以下几点：</p>
+<ul>
+<li> 不允许隐式地创建全局变量<figure class="highlight js"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&quot;use strict&quot;</span></span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">fn</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    a = <span class="number">2</span></span><br><span class="line">    <span class="comment">// 这样子的LHS引用式不允许的</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></div></figure></li>
+<li> 进行LHS查询失败时，并不会创建并返回一个全局变量，引擎会抛出同查询失败时类似的ReferenceError异常。</li>
+<li> 对于RHS查询，如果对变量进行不合理的操作，引擎会抛出TypeError异常，譬如对一个非函数类型的<br>变量执行调用操作，对null、undefined类型的值进行非法操作等。  </li>
+</ul>
+
+        <h1 id="总结"   >
+          <a href="#总结" class="heading-link"><i class="fas fa-link"></i></a><a href="#总结" class="headerlink" title="总结"></a>总结</h1>
+      <p>js代码的编译和执行离不开js引擎、编译器、作用域这三个人的共同协作，<br>这么艰巨的事情在三个人的各司其职下拆分成个个清晰明确的步骤。</p>
+<p>当然，本篇只是作为js引擎工作的开篇，js运行的原理远不止那么多，其中作用域的细节，执行上下文栈，事件循环等等，更是需要深入的讨论。</p>
+</div><footer class="post-footer"><div class="post-ending ending"><div class="ending__text">------ END ------</div></div><div class="post-copyright copyright"><div class="copyright-author"><span class="copyright-author__name">Author: </span><span class="copyright-author__value"><a href="http://example.com">Ivan</a></span></div><div class="copyright-link"><span class="copyright-link__name">Link: </span><span class="copyright-link__value"><a href="http://example.com/2021/02/20/js%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/">http://example.com/2021/02/20/js%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/</a></span></div><div class="copyright-notice"><span class="copyright-notice__name">Copyright: </span><span class="copyright-notice__value">All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" rel="external nofollow" target="_blank">BY-NC-SA</a> unless stating additionally</span></div></div><div class="post-tags"><span class="post-tags-item"><span class="post-tags-item__icon"><i class="fas fa-tag"></i></span><a class="post-tags-item__link" href="http://example.com/tags/js/">js</a></span></div><nav class="post-paginator paginator"><div class="paginator-next"><a class="paginator-next__link" href="/2021/02/17/my-firtst-article/"><span class="paginator-prev__text">my_firtst_article</span><span class="paginator-next__icon"><i class="fas fa-angle-right"></i></span></a></div></nav></footer></div></div></div><div class="sidebar-wrap" id="sidebar-wrap"><aside class="sidebar" id="sidebar"><div class="sidebar-nav"><span class="sidebar-nav-toc current">文章目录</span><span class="sidebar-nav-ov">站点概述</span></div><section class="sidebar-toc"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%93%BF%E9%94%B5%E4%B8%89%E4%BA%BA%E8%A1%8C"><span class="toc-number">1.</span> <span class="toc-text">
+          铿锵三人行</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#js%E7%BC%96%E8%AF%91%E7%9A%84%E6%B5%81%E7%A8%8B"><span class="toc-number">1.1.</span> <span class="toc-text">
+          js编译的流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%88%86%E8%AF%8D-%E8%AF%8D%E6%B3%95%E5%88%86%E6%9E%90"><span class="toc-number">1.1.1.</span> <span class="toc-text">
+          1.分词&#x2F;词法分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E8%A7%A3%E6%9E%90-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90"><span class="toc-number">1.1.2.</span> <span class="toc-text">
+          2.解析&#x2F;语法分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90"><span class="toc-number">1.1.3.</span> <span class="toc-text">
+          3.代码生成</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#js%E5%BC%95%E6%93%8E%E7%9A%84%E4%B8%A4%E4%B8%AA%E5%B0%8F%E4%BC%99%E4%BC%B4"><span class="toc-number">1.2.</span> <span class="toc-text">
+          js引擎的两个小伙伴</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#js%E5%BC%95%E6%93%8E"><span class="toc-number">1.2.1.</span> <span class="toc-text">
+          js引擎</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%96%E8%AF%91%E5%99%A8"><span class="toc-number">1.2.2.</span> <span class="toc-text">
+          编译器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%9C%E7%94%A8%E5%9F%9F"><span class="toc-number">1.2.3.</span> <span class="toc-text">
+          作用域</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%95%E6%93%8E%E5%92%8C%E4%BD%9C%E7%94%A8%E5%9F%9F%E7%9A%84%E5%AF%B9%E8%AF%9D%EF%BC%9F"><span class="toc-number">1.3.</span> <span class="toc-text">
+          引擎和作用域的对话？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#LHS%E5%BC%95%E7%94%A8%E5%92%8CRHS%E5%BC%95%E7%94%A8"><span class="toc-number">1.3.1.</span> <span class="toc-text">
+          LHS引用和RHS引用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%98%E9%87%8F%E6%9F%A5%E6%89%BE"><span class="toc-number">1.3.2.</span> <span class="toc-text">
+          变量查找</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">2.</span> <span class="toc-text">
+          总结</span></a></li></ol></section><!-- ov = overview--><section class="sidebar-ov hide"><div class="sidebar-ov-author"><div class="sidebar-ov-author__avatar"><img class="sidebar-ov-author__avatar_img" src="/images/author-avatar.jpeg" alt="avatar"></div><p class="sidebar-ov-author__text">因上努力 果上随缘</p></div><div class="sidebar-ov-state"><a class="sidebar-ov-state-item sidebar-ov-state-item--posts" href="/archives/"><div class="sidebar-ov-state-item__count">3</div><div class="sidebar-ov-state-item__name">文章</div></a><a class="sidebar-ov-state-item sidebar-ov-state-item--tags" href="/tags/"><div class="sidebar-ov-state-item__count">1</div><div class="sidebar-ov-state-item__name">标签</div></a></div><div class="sidebar-ov-cc"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener" data-popover="Creative Commons" data-popover-pos="up"><img src="/images/cc-by-nc-sa.svg"></a></div></section><div class="sidebar-reading"><div class="sidebar-reading-info"><span class="sidebar-reading-info__text">You have read </span><span class="sidebar-reading-info__num">0</span><span class="sidebar-reading-info__perc">%</span></div><div class="sidebar-reading-line"></div></div></aside></div><div class="clearfix"></div></div></main><footer class="footer" id="footer"><div class="footer-inner"><div><span>Copyright © 2021</span><span class="footer__icon"><i class="fas fa-heart"></i></span><span>Ivan</span></div><div><span>Powered by <a href="http://hexo.io/" title="Hexo" target="_blank" rel="noopener">Hexo</a></span><span> v5.3.0</span><span class="footer__devider">|</span><span>Theme - <a href="https://github.com/liuyib/hexo-theme-stun/" title="Stun" target="_blank" rel="noopener">Stun</a></span><span> v2.6.2</span></div></div></footer><div class="loading-bar" id="loading-bar"><div class="loading-bar__progress"></div></div><div class="back2top" id="back2top"><span class="back2top__icon"><i class="fas fa-rocket"></i></span></div></div><script src="https://cdn.jsdelivr.net/npm/jquery@v3.4.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.ui.min.js"></script><script src="/js/utils.js?v=2.6.2"></script><script src="/js/stun-boot.js?v=2.6.2"></script><script src="/js/scroll.js?v=2.6.2"></script><script src="/js/header.js?v=2.6.2"></script><script src="/js/sidebar.js?v=2.6.2"></script></body></html>
