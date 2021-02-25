@@ -1,0 +1,126 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="format-detection" content="telephone=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><link rel="icon" href="/images/icons/favicon-16x16.png?v=2.6.2" type="image/png" sizes="16x16"><link rel="icon" href="/images/icons/favicon-32x32.png?v=2.6.2" type="image/png" sizes="32x32"><meta name="description" content="js引擎是单线程的，在运行脚本时我们可以想象有一条执行流从上到下流经各个代码区块的时候，在各个区块会创建出相应的执行环境，这种环境就叫执行上下文。 所谓的代码区块是指什么呢，指的是js的三个运行环境，其中包括    全局环境：这是js最先进入的执行环境。   函数环境：函数被调用的时候，会创建相应的函数执行环境   eval  那么，一个代码区块里可能嵌套着多个函数，从而产生多个执行环境，这么多执">
+<meta property="og:type" content="article">
+<meta property="og:title" content="javascript之执行上下文">
+<meta property="og:url" content="http://localhost:4000/2021/02/23/javascript%E4%B9%8B%E6%89%A7%E8%A1%8C%E4%B8%8A%E4%B8%8B%E6%96%87/index.html">
+<meta property="og:site_name" content="Ivan Shork">
+<meta property="og:description" content="js引擎是单线程的，在运行脚本时我们可以想象有一条执行流从上到下流经各个代码区块的时候，在各个区块会创建出相应的执行环境，这种环境就叫执行上下文。 所谓的代码区块是指什么呢，指的是js的三个运行环境，其中包括    全局环境：这是js最先进入的执行环境。   函数环境：函数被调用的时候，会创建相应的函数执行环境   eval  那么，一个代码区块里可能嵌套着多个函数，从而产生多个执行环境，这么多执">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://localhost:4000/images/post_img/scope/screenshot.png">
+<meta property="og:image" content="http://localhost:4000/images/post_img/scope/screenshot2.png">
+<meta property="og:image" content="http://localhost:4000/images/post_img/scope/screenshot3.png">
+<meta property="og:image" content="http://localhost:4000/images/post_img/scope/screenshot2.png">
+<meta property="og:image" content="http://localhost:4000/images/post_img/scope/screenshot.png">
+<meta property="og:image" content="http://localhost:4000/images/post_img/scope/4067575-42d6c06ba1f19f3e.png">
+<meta property="article:published_time" content="2021-02-23T09:54:33.000Z">
+<meta property="article:modified_time" content="2021-02-24T01:23:14.736Z">
+<meta property="article:author" content="Ivan">
+<meta property="article:tag" content="js">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://localhost:4000/images/post_img/scope/screenshot.png"><title>javascript之执行上下文 | Ivan Shork</title><link ref="canonical" href="http://localhost:4000/2021/02/23/javascript%E4%B9%8B%E6%89%A7%E8%A1%8C%E4%B8%8A%E4%B8%8B%E6%96%87/"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.12.1/css/all.min.css" type="text/css"><link rel="stylesheet" href="/css/index.css?v=2.6.2"><script>var Stun = window.Stun || {};
+var CONFIG = {
+  root: '/',
+  algolia: undefined,
+  assistSearch: undefined,
+  fontIcon: {"prompt":{"success":"fas fa-check-circle","info":"fas fa-arrow-circle-right","warning":"fas fa-exclamation-circle","error":"fas fa-times-circle"},"copyBtn":"fas fa-copy"},
+  sidebar: {"offsetTop":"20px","tocMaxDepth":6},
+  header: {"enable":true,"showOnPost":false,"scrollDownIcon":false},
+  postWidget: {"endText":true},
+  nightMode: {"enable":true},
+  back2top: {"enable":true},
+  codeblock: {"style":"default","highlight":"light","wordWrap":false},
+  reward: false,
+  fancybox: false,
+  zoomImage: {"gapAside":"20px"},
+  galleryWaterfall: undefined,
+  lazyload: false,
+  pjax: undefined,
+  externalLink: {"icon":{"enable":true,"name":"fas fa-external-link-alt"}},
+  shortcuts: undefined,
+  prompt: {"copyButton":"Copy","copySuccess":"Copy Success","copyError":"Copy Error"},
+  sourcePath: {"js":"js","css":"css","images":"images"},
+};
+
+window.CONFIG = CONFIG;</script><meta name="generator" content="Hexo 5.3.0"></head><body><div class="container" id="container"><header class="header" id="header"><div class="header-inner header-inner--height header-inner--bgcolor"><nav class="header-nav header-nav--sticky"><div class="header-nav-inner"><div class="header-nav-menubtn"><i class="fas fa-bars"></i></div><div class="header-nav-menu"><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/"><span class="header-nav-menu-item__icon"><i class="fas fa-home"></i></span><span class="header-nav-menu-item__text">Home</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/archives/"><span class="header-nav-menu-item__icon"><i class="fas fa-folder-open"></i></span><span class="header-nav-menu-item__text">Archives</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/tags/"><span class="header-nav-menu-item__icon"><i class="fas fa-tags"></i></span><span class="header-nav-menu-item__text">Tags</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/my-info/"><span class="header-nav-menu-item__icon"><i class="fas fa-info"></i></span><span class="header-nav-menu-item__text">Me</span></a></div></div><div class="header-nav-mode"><div class="mode"><div class="mode-track"><span class="mode-track-moon"></span><span class="mode-track-sun"></span></div><div class="mode-thumb"></div></div></div></div></nav></div></header><main class="main" id="main"><div class="main-inner"><div class="content-wrap" id="content-wrap"><div class="content" id="content"><!-- Just used to judge whether it is an article page--><div id="is-post"></div><div class="post"><header class="post-header"><h1 class="post-title">javascript之执行上下文</h1><div class="post-meta"><span class="post-meta-item post-meta-item--createtime"><span class="post-meta-item__icon"><i class="far fa-calendar-plus"></i></span><span class="post-meta-item__info">创建时间</span><span class="post-meta-item__value">2021-02-23</span></span><span class="post-meta-item post-meta-item--updatetime"><span class="post-meta-item__icon"><i class="far fa-calendar-check"></i></span><span class="post-meta-item__info">更新时间</span><span class="post-meta-item__value">2021-02-24</span></span><span class="post-meta-item post-meta-item--wordcount"><span class="post-meta-item__icon"><i class="far fa-file-word"></i></span><span class="post-meta-item__info">字数统计</span><span class="post-meta-item__value">1.5k</span></span><span class="post-meta-item post-meta-item--readtime"><span class="post-meta-item__icon"><i class="far fa-clock"></i></span><span class="post-meta-item__info">阅读时间</span><span class="post-meta-item__value">8m</span></span></div></header><div class="post-body"><p>js引擎是单线程的，在运行脚本时我们可以想象有一条执行流从上到下流经各个代码区块的时候，在各个区块会创建出相应的执行环境，这种环境就叫执行上下文。</p>
+<p>所谓的代码区块是指什么呢，指的是js的三个运行环境，其中包括</p>
+<ul>
+<li>  全局环境：这是js最先进入的执行环境。</li>
+<li>  函数环境：函数被调用的时候，会创建相应的函数执行环境</li>
+<li>  eval</li>
+</ul>
+<p>那么，一个代码区块里可能嵌套着多个函数，从而产生多个执行环境，这么多执行环境（上下文），js是怎么管理它们的呢？</p>
+<p>这里就要引入一个执行上下文栈的概念。</p>
+
+        <h2 id="执行上下文栈"   >
+          <a href="#执行上下文栈" class="heading-link"><i class="fas fa-link"></i></a><a href="#执行上下文栈" class="headerlink" title="执行上下文栈"></a>执行上下文栈</h2>
+      <p>它是一个基本的栈结构，遵循”先进后出”的原则，每当产生一个执行上下文，js引擎就会将它们压入栈底。当代码执行完毕，它又会从栈中弹出，等待销毁。js的运行过程就是执行上下文在不断创建、运行、销毁的过程。</p>
+<p>栈底永远是全局执行上下文，因为它是执行流最先流经的区块，<strong>我们可以把它想象成一个全局兜底的环境，里面包含着其他函数运行时产生的环境</strong>。只有当全部函数执行上下文销毁并且全局代码执行完毕时，它才会从栈底弹出。</p>
+<p>因此，当浏览器窗口关闭后，全局执行上下文才会出栈。至此，一个javascript程序运行终结。</p>
+<p>我们可以通过以下代码来看看执行上下文栈的工作过程</p>
+<figure class="highlight js"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">foo</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    ...</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">bar</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        ...</span><br><span class="line">  &#125;</span><br><span class="line">  bar()</span><br><span class="line">&#125;</span><br><span class="line">foo()</span><br></pre></td></tr></table></div></figure>
+<ul>
+<li><p>  首先，程序开始运行，运行前会先进行编译（在js引擎工作原理一章有讲过），然后再执行，此时会创建全局执行上下文，并将它压入栈底。<br><img src="/images/post_img/scope/screenshot.png"></p>
+</li>
+<li><p>  接着，全局执行上下文其中的可执行代码执行，遇到foo()，此时激活foo创建函数执行上下文，foo执行上下文入栈。</p>
+</li>
+</ul>
+<p><img src="/images/post_img/scope/screenshot2.png"></p>
+<ul>
+<li><p>  foo执行上下文可执行代码执行，紧接着遇到bar()，创建bar执行上下文并将它入栈。<br><img src="/images/post_img/scope/screenshot3.png"></p>
+</li>
+<li><p>  bar上下文可执行代码执行完成，没有遇到要继续创建执行上下文的代码，bar执行上下文从栈中弹出并等待销毁。<br><img src="/images/post_img/scope/screenshot2.png"></p>
+</li>
+<li><p>  foo执行上下文可执行代码完成，foo执行上下文出栈。<br><img src="/images/post_img/scope/screenshot.png"></p>
+</li>
+<li><p>  全局执行上下文在浏览器窗口关闭后出栈。</p>
+</li>
+</ul>
+
+        <h2 id="执行上下文的生命周期"   >
+          <a href="#执行上下文的生命周期" class="heading-link"><i class="fas fa-link"></i></a><a href="#执行上下文的生命周期" class="headerlink" title="执行上下文的生命周期"></a>执行上下文的生命周期</h2>
+      <p>js执行流流经代码区块的运行过程，就是执行上下文反复创建、执行、销毁的过程。</p>
+<p>因此执行上下文的生命周期就是：<strong>创建、执行、销毁</strong>。</p>
+<p><img src="/images/post_img/scope/4067575-42d6c06ba1f19f3e.png"></p>
+<ul>
+<li><p>创建阶段</p>
+<ul>
+<li>  生成变量对象(函数里的叫活动对象)</li>
+<li>  建立作用域链</li>
+<li>确定 this 指向</li>
+</ul>
+</li>
+<li><p>执行阶段</p>
+<ul>
+<li>  变量赋值</li>
+<li>  函数引用</li>
+<li>  执行其他代码</li>
+</ul>
+</li>
+<li><p>销毁阶段</p>
+<ul>
+<li>  执行完毕出栈，等待回收被销毁</li>
+</ul>
+</li>
+</ul>
+<p>__变量对象__：<br>这里的变量对象是一个很重要的概念，你可以把它理解为执行上下文里作用域的一个实体。执行上下文里定义的变量、函数都保存在这个对象中。</p>
+<p>它在执行上下文创建的阶段就立马初始化，<strong>并且会在稍后压入作用域链的顶端构造该执行上下文的最终作用域链</strong>。</p>
+<p>变量对象的初始化分下面三个阶段：</p>
+<ul>
+<li>  扫描当前执行上下文中的所有形参（针对函数执行上下文）：该过程生成 Arguments 对象，并创建以形参变量名作为属性名，形参变量值作为属性值的变量对象属性；我们都知道，在函数中，有一个 arguments 对象，存储了所有传递给函数的参数，那么这个对象是哪里来的呢，其实它就是在这个阶段生成的。</li>
+<li>  扫描当前执行上下文中的所有函数声明：该过程创建以函数名作为属性名，函数的引用地址作为属性值的变量对象属性；</li>
+<li>  扫描当前执行上下文中的所有变量声明：该过程创建以变量名作为属性名，undefined 作为属性值的变量对象属性；（变量的赋值是在代码执行阶段进行的）</li>
+</ul>
+<p>在第二三阶段其实就涉及到我们平时常说的函数声明提升和变量提升，并且函数声明提升的优先级是高于变量声明提升的。<strong>如果变量声明和函数声明有冲突的话，变量对象初始化时会忽略前者。</strong></p>
+<p>这里举个变量对象初始化的小例子:</p>
+<figure class="highlight js"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">foo</span>(<span class="params">name</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> a = <span class="number">1</span></span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">bar</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">var</span> b = <span class="number">2</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">foo(<span class="string">&#x27;ivan&#x27;</span>)</span><br></pre></td></tr></table></div></figure>
+<p>这里调用foo，创建执行上下文时会创建以下一个变量对象(活动对象)</p>
+<figure class="highlight plain"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">AO &#x3D; &#123;</span><br><span class="line">    arguments: &#123;</span><br><span class="line">        0: &#39;ivan&#39;</span><br><span class="line">        length: 1</span><br><span class="line">    &#125;,</span><br><span class="line">    name: &#39;ivan&#39;,</span><br><span class="line">    a: undefined,</span><br><span class="line">    bar: reference to function bar()&#123;&#125;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></div></figure>
+<p>然后执行可执行代码，进入执行阶段，修改变量对象的值。</p>
+<figure class="highlight plain"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">AO &#x3D; &#123;</span><br><span class="line">    arguments: &#123;</span><br><span class="line">        0: &#39;ivan&#39;</span><br><span class="line">        length: 1</span><br><span class="line">    &#125;,</span><br><span class="line">    name: &#39;ivan&#39;,</span><br><span class="line">    a: 1,</span><br><span class="line">    bar: reference to function bar()&#123;&#125;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></div></figure>
+<p><strong>全局上下文的变量对象</strong></p>
+<p>在浏览器中，全局对象为window。</p>
+<p>全局上下文有一个特殊的地方，它的变量对象，就是window对象。而这个特殊，在this指向上也同样适用，this也是指向window。</p>
+<figure class="highlight plain"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 全局上下文</span><br><span class="line">windowEC &#x3D; &#123;</span><br><span class="line">    VO: window,  &#x2F;&#x2F;变量对象</span><br><span class="line">    scopeChain: &#123;&#125;, &#x2F;&#x2F;作用域链</span><br><span class="line">    this: window    &#x2F;&#x2F;this</span><br><span class="line">&#125;</span><br></pre></td></tr></table></div></figure>
+<p>全局上下文的生命周期在程序运行时一直存在，只要不关闭浏览器，全局上下文就一直存在，并且其变量对象可以作为兜底对象被其他上下文使用。</p>
+</div><footer class="post-footer"><div class="post-ending ending"><div class="ending__text">------ END ------</div></div><div class="post-copyright copyright"><div class="copyright-author"><span class="copyright-author__name">Author: </span><span class="copyright-author__value"><a href="http://localhost:4000">Ivan</a></span></div><div class="copyright-link"><span class="copyright-link__name">Link: </span><span class="copyright-link__value"><a href="http://localhost:4000/2021/02/23/javascript%E4%B9%8B%E6%89%A7%E8%A1%8C%E4%B8%8A%E4%B8%8B%E6%96%87/">http://localhost:4000/2021/02/23/javascript%E4%B9%8B%E6%89%A7%E8%A1%8C%E4%B8%8A%E4%B8%8B%E6%96%87/</a></span></div><div class="copyright-notice"><span class="copyright-notice__name">Copyright: </span><span class="copyright-notice__value">All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" rel="external nofollow" target="_blank">BY-NC-SA</a> unless stating additionally</span></div></div><div class="post-tags"><span class="post-tags-item"><span class="post-tags-item__icon"><i class="fas fa-tag"></i></span><a class="post-tags-item__link" href="http://localhost:4000/tags/js/">js</a></span></div><nav class="post-paginator paginator"><div class="paginator-prev"><a class="paginator-prev__link" href="/2021/02/23/javascript%E4%B9%8B%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF/"><span class="paginator-prev__icon"><i class="fas fa-angle-left"></i></span><span class="paginator-prev__text">javascript之事件循环</span></a></div><div class="paginator-next"><a class="paginator-next__link" href="/2021/02/23/javascript%E4%B9%8B%E4%BD%9C%E7%94%A8%E5%9F%9F/"><span class="paginator-prev__text">javascript之作用域</span><span class="paginator-next__icon"><i class="fas fa-angle-right"></i></span></a></div></nav></footer></div></div></div><div class="sidebar-wrap" id="sidebar-wrap"><aside class="sidebar" id="sidebar"><div class="sidebar-nav"><span class="sidebar-nav-toc current">文章目录</span><span class="sidebar-nav-ov">站点概述</span></div><section class="sidebar-toc"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E4%B8%8A%E4%B8%8B%E6%96%87%E6%A0%88"><span class="toc-number">1.</span> <span class="toc-text">
+          执行上下文栈</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E4%B8%8A%E4%B8%8B%E6%96%87%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F"><span class="toc-number">2.</span> <span class="toc-text">
+          执行上下文的生命周期</span></a></li></ol></section><!-- ov = overview--><section class="sidebar-ov hide"><div class="sidebar-ov-author"><div class="sidebar-ov-author__avatar"><img class="sidebar-ov-author__avatar_img" src="/images/author-avatar.jpeg" alt="avatar"></div><p class="sidebar-ov-author__text">因上努力 果上随缘</p></div><div class="sidebar-ov-state"><a class="sidebar-ov-state-item sidebar-ov-state-item--posts" href="/archives/"><div class="sidebar-ov-state-item__count">21</div><div class="sidebar-ov-state-item__name">文章</div></a><a class="sidebar-ov-state-item sidebar-ov-state-item--tags" href="/tags/"><div class="sidebar-ov-state-item__count">5</div><div class="sidebar-ov-state-item__name">标签</div></a></div><div class="sidebar-ov-cc"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener" data-popover="Creative Commons" data-popover-pos="up"><img src="/images/cc-by-nc-sa.svg"></a></div></section><div class="sidebar-reading"><div class="sidebar-reading-info"><span class="sidebar-reading-info__text">You have read </span><span class="sidebar-reading-info__num">0</span><span class="sidebar-reading-info__perc">%</span></div><div class="sidebar-reading-line"></div></div></aside></div><div class="clearfix"></div></div></main><footer class="footer" id="footer"><div class="footer-inner"><div><span>Copyright © 2021</span><span class="footer__icon"><i class="fas fa-heart"></i></span><span>Ivan</span></div><div><span>Powered by <a href="http://hexo.io/" title="Hexo" target="_blank" rel="noopener">Hexo</a></span><span> v5.3.0</span><span class="footer__devider">|</span><span>Theme - <a href="https://github.com/liuyib/hexo-theme-stun/" title="Stun" target="_blank" rel="noopener">Stun</a></span><span> v2.6.2</span></div></div></footer><div class="loading-bar" id="loading-bar"><div class="loading-bar__progress"></div></div><div class="back2top" id="back2top"><span class="back2top__icon"><i class="fas fa-rocket"></i></span></div></div><script src="https://cdn.jsdelivr.net/npm/jquery@v3.4.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.ui.min.js"></script><script src="/js/utils.js?v=2.6.2"></script><script src="/js/stun-boot.js?v=2.6.2"></script><script src="/js/scroll.js?v=2.6.2"></script><script src="/js/header.js?v=2.6.2"></script><script src="/js/sidebar.js?v=2.6.2"></script></body></html>

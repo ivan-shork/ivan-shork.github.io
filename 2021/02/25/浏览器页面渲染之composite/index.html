@@ -1,0 +1,230 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="format-detection" content="telephone=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><link rel="icon" href="/images/icons/favicon-16x16.png?v=2.6.2" type="image/png" sizes="16x16"><link rel="icon" href="/images/icons/favicon-32x32.png?v=2.6.2" type="image/png" sizes="32x32"><meta name="description" content="浏览器在渲染这个过程中对图层的处理，特别是图层的合并。这是浏览器在渲染前最重要的一步工作，并且关系到GPU，也就是我们常说的图形处理器的利用。了解这一步骤，这对于渲染性能的优化是十分有用的。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浏览器页面渲染之composite">
+<meta property="og:url" content="http://localhost:4000/2021/02/25/%E6%B5%8F%E8%A7%88%E5%99%A8%E9%A1%B5%E9%9D%A2%E6%B8%B2%E6%9F%93%E4%B9%8Bcomposite/index.html">
+<meta property="og:site_name" content="Ivan Shork">
+<meta property="og:description" content="浏览器在渲染这个过程中对图层的处理，特别是图层的合并。这是浏览器在渲染前最重要的一步工作，并且关系到GPU，也就是我们常说的图形处理器的利用。了解这一步骤，这对于渲染性能的优化是十分有用的。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/2020122322401343.png#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20201224110814690.png#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/2020122411084972.png#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20201224110941604.png#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20201224113131952.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgzMDI3MQ==,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20201224202938376.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgzMDI3MQ==,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20201224203237816.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgzMDI3MQ==,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20201224204342494.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgzMDI3MQ==,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="article:published_time" content="2021-02-25T02:00:48.000Z">
+<meta property="article:modified_time" content="2021-02-25T02:14:47.093Z">
+<meta property="article:author" content="Ivan">
+<meta property="article:tag" content="浏览器">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/2020122322401343.png#pic_center"><title>浏览器页面渲染之composite | Ivan Shork</title><link ref="canonical" href="http://localhost:4000/2021/02/25/%E6%B5%8F%E8%A7%88%E5%99%A8%E9%A1%B5%E9%9D%A2%E6%B8%B2%E6%9F%93%E4%B9%8Bcomposite/"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.12.1/css/all.min.css" type="text/css"><link rel="stylesheet" href="/css/index.css?v=2.6.2"><script>var Stun = window.Stun || {};
+var CONFIG = {
+  root: '/',
+  algolia: undefined,
+  assistSearch: undefined,
+  fontIcon: {"prompt":{"success":"fas fa-check-circle","info":"fas fa-arrow-circle-right","warning":"fas fa-exclamation-circle","error":"fas fa-times-circle"},"copyBtn":"fas fa-copy"},
+  sidebar: {"offsetTop":"20px","tocMaxDepth":6},
+  header: {"enable":true,"showOnPost":false,"scrollDownIcon":false},
+  postWidget: {"endText":true},
+  nightMode: {"enable":true},
+  back2top: {"enable":true},
+  codeblock: {"style":"default","highlight":"light","wordWrap":false},
+  reward: false,
+  fancybox: false,
+  zoomImage: {"gapAside":"20px"},
+  galleryWaterfall: undefined,
+  lazyload: false,
+  pjax: undefined,
+  externalLink: {"icon":{"enable":true,"name":"fas fa-external-link-alt"}},
+  shortcuts: undefined,
+  prompt: {"copyButton":"Copy","copySuccess":"Copy Success","copyError":"Copy Error"},
+  sourcePath: {"js":"js","css":"css","images":"images"},
+};
+
+window.CONFIG = CONFIG;</script><meta name="generator" content="Hexo 5.3.0"></head><body><div class="container" id="container"><header class="header" id="header"><div class="header-inner header-inner--height header-inner--bgcolor"><nav class="header-nav header-nav--sticky"><div class="header-nav-inner"><div class="header-nav-menubtn"><i class="fas fa-bars"></i></div><div class="header-nav-menu"><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/"><span class="header-nav-menu-item__icon"><i class="fas fa-home"></i></span><span class="header-nav-menu-item__text">Home</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/archives/"><span class="header-nav-menu-item__icon"><i class="fas fa-folder-open"></i></span><span class="header-nav-menu-item__text">Archives</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/tags/"><span class="header-nav-menu-item__icon"><i class="fas fa-tags"></i></span><span class="header-nav-menu-item__text">Tags</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/my-info/"><span class="header-nav-menu-item__icon"><i class="fas fa-info"></i></span><span class="header-nav-menu-item__text">Me</span></a></div></div><div class="header-nav-mode"><div class="mode"><div class="mode-track"><span class="mode-track-moon"></span><span class="mode-track-sun"></span></div><div class="mode-thumb"></div></div></div></div></nav></div></header><main class="main" id="main"><div class="main-inner"><div class="content-wrap" id="content-wrap"><div class="content" id="content"><!-- Just used to judge whether it is an article page--><div id="is-post"></div><div class="post"><header class="post-header"><h1 class="post-title">浏览器页面渲染之composite</h1><div class="post-meta"><span class="post-meta-item post-meta-item--createtime"><span class="post-meta-item__icon"><i class="far fa-calendar-plus"></i></span><span class="post-meta-item__info">创建时间</span><span class="post-meta-item__value">2021-02-25</span></span><span class="post-meta-item post-meta-item--updatetime"><span class="post-meta-item__icon"><i class="far fa-calendar-check"></i></span><span class="post-meta-item__info">更新时间</span><span class="post-meta-item__value">2021-02-25</span></span><span class="post-meta-item post-meta-item--wordcount"><span class="post-meta-item__icon"><i class="far fa-file-word"></i></span><span class="post-meta-item__info">字数统计</span><span class="post-meta-item__value">1.2k</span></span><span class="post-meta-item post-meta-item--readtime"><span class="post-meta-item__icon"><i class="far fa-clock"></i></span><span class="post-meta-item__info">阅读时间</span><span class="post-meta-item__value">7m</span></span></div></header><div class="post-body">
+        <h1 id="前言"   >
+          <a href="#前言" class="heading-link"><i class="fas fa-link"></i></a><a href="#前言" class="headerlink" title="前言"></a>前言</h1>
+      <p>上一篇文章讲了浏览器渲染页面的大概步骤:<br><a href="http://localhost:4000/2021/02/23/%E6%B5%8F%E8%A7%88%E5%99%A8%E5%86%85%E6%A0%B8%E5%8F%8A%E8%BF%90%E8%A1%8C%E6%9C%BA%E5%88%B6">浏览器内核及渲染机制</a><br>其中最主要的渲染在于后期的布局、绘制以及图层合并。<br>而今天我们主要讲浏览器在这个过程中对图层的处理，特别是图层的合并。这是浏览器在渲染前最重要的一步工作，并且关系到GPU，也就是我们常说的图形处理器的利用。了解这一步骤，这对于渲染性能的优化是十分有用的。</p>
+<hr>
+
+        <h2 id="硬件加速"   >
+          <a href="#硬件加速" class="heading-link"><i class="fas fa-link"></i></a><a href="#硬件加速" class="headerlink" title="硬件加速"></a>硬件加速</h2>
+      <p>这里要先讲以下页面渲染中硬件加速的概念。而讲到硬件加速又不得不讲GPU。它又叫图形处理器，是计算机的底层硬件。用来处理计算机里图形和图像相关工作的微处理器。<br>传统上，网络浏览器完全依靠在CPU上渲染网页内容。而GPU使显卡减少了对CPU的依赖，并进行部分原本CPU的工作，尤其是在3D图形处理时。这对于当今充斥着许多高级动画的网页来说，是十分宝贵的硬件资源。尤其是在CSS3后，3D动画开始受到欢迎并大面积的应用。而利用GPU来合成网页内容被称为硬件加速。</p>
+
+        <h2 id="硬件加速的好处"   >
+          <a href="#硬件加速的好处" class="heading-link"><i class="fas fa-link"></i></a><a href="#硬件加速的好处" class="headerlink" title="硬件加速的好处"></a>硬件加速的好处</h2>
+      <p>硬件合成加速的好处有三种类型：<br>1.在绘图和合成操作涉及大量像素的时候，GPU合成页面层可以实现比CPU好得多的效率（包括加速和绘制能力）。GPU就是对这些类型的工作负载而设计的。<br>2.CPU不再需要昂贵回读内容的操作，因为他们已经可以在GPU上执行（如加速视频，Canvas2D，或WebGL的）。<br>3.CPU和GPU，从而可以在同一时间，以建立一个并行有效的图形流水线操作。</p>
+<hr style=" border:solid; width:100px; height:1px;" color=#000000 size=1">
+
+
+        <h1 id="一、回顾渲染过程"   >
+          <a href="#一、回顾渲染过程" class="heading-link"><i class="fas fa-link"></i></a><a href="#一、回顾渲染过程" class="headerlink" title="一、回顾渲染过程"></a>一、回顾渲染过程</h1>
+      <ul>
+<li>浏览器解析html生成DOM树</li>
+<li>浏览器解析css生成CSSOM树</li>
+<li>DOM + CSSOM 变成 Render Tree</li>
+<li>布局（Layout）</li>
+<li>绘制（Paint）</li>
+<li>图层合并（Composite）</li>
+<li>输出位图展示</li>
+</ul>
+<p>这是大概的渲染过程，但真实浏览器内部运行的细节比这复杂许多。尤其是cpu、gpu对图像数据的传输和处理，这些都封装在浏览器的底层，用户只需关心页面的呈现即可。</p>
+
+        <h1 id="二、composite？"   >
+          <a href="#二、composite？" class="heading-link"><i class="fas fa-link"></i></a><a href="#二、composite？" class="headerlink" title="二、composite？"></a>二、composite？</h1>
+      
+        <h2 id="1-何为composite？"   >
+          <a href="#1-何为composite？" class="heading-link"><i class="fas fa-link"></i></a><a href="#1-何为composite？" class="headerlink" title="1.何为composite？"></a>1.何为composite？</h2>
+      <p>浏览器将文档中各个标签转化为含有node节点的dom树，再到最后的渲染。这其中是有节点到布局对象的映射的。</p>
+
+        <h3 id="node-到-LayoutObject"   >
+          <a href="#node-到-LayoutObject" class="heading-link"><i class="fas fa-link"></i></a><a href="#node-到-LayoutObject" class="headerlink" title="node 到 LayoutObject"></a>node 到 LayoutObject</h3>
+      <p>dom树里的node节点都会对应有唯一一个LayoutObject，一些文章中也称它为RenderObject，它包含了节点如何被绘制到屏幕上的信息。其实就是我们渲染树上的一个个节点。</p>
+
+        <h3 id="LayoutObjects-到-RenderLayers"   >
+          <a href="#LayoutObjects-到-RenderLayers" class="heading-link"><i class="fas fa-link"></i></a><a href="#LayoutObjects-到-RenderLayers" class="headerlink" title="LayoutObjects 到 RenderLayers"></a>LayoutObjects 到 RenderLayers</h3>
+      <p>每个渲染对象都直接或间接的通过一个祖先渲染对象与一个渲染层RenderLayer关联。</p>
+<p>这里的RenderLayers，又叫渲染层。它与layoutobjects是对应的，即与dom树是相对应的。一般来说，同属一个坐标空间（例如受同一个css变换的影响）的layoutobjects会形成一个RenderLayers。RenderLayer 最初是用来实现 stacking contest（层叠上下文），以此来保证页面元素以正确的顺序合成（composite），这样才能正确的展示元素的重叠以及半透明元素等等。</p>
+<p>因此满足形成层叠上下文条件的 LayoutObject 一定会为其创建新的渲染层，当然还有其他的一些特殊情况，为一些特殊的 LayoutObjects 创建一个新的渲染层，比如 overflow != visible 的元素。根据创建 RenderLayer 的原因不同，可以将其分为常见的 3 类：</p>
+<p>▪ NormalPaintLayer</p>
+<ul>
+<li><p>  根元素（HTML）</p>
+</li>
+<li><p>   有明确的定位属性（relative、fixed、sticky、absolute）</p>
+</li>
+<li><p>   透明的（opacity 小于 1）</p>
+</li>
+<li><p>   有 CSS 滤镜（fliter）</p>
+</li>
+<li><p>   有 CSS mask 属性</p>
+</li>
+<li><p>   有 CSS mix-blend-mode 属性（不为 normal）</p>
+</li>
+<li><p>   有 CSS transform 属性（不为 none）</p>
+</li>
+<li><p>  backface-visibility 属性为 hidden</p>
+</li>
+<li><p>   有 CSS reflection 属性</p>
+</li>
+<li><p>   有 CSS column-count 属性（不为 auto）或者 有 CSS column-width 属性（不为 auto）</p>
+</li>
+<li><p>   当前有对于 opacity、transform、fliter、backdrop-filter 应用动画</p>
+</li>
+</ul>
+<p>▪ OverflowClipPaintLayer</p>
+<pre><code>overflow 不为 visible
+</code></pre>
+<p>▪ NoPaintLayer</p>
+<pre><code>不需要 paint 的 PaintLayer，比如一个没有视觉属性（背景、颜色、阴影等）的空 div。
+</code></pre>
+<p>满足以上条件的 LayoutObject 会拥有独立的渲染层，而<strong>其他的 LayoutObject 则和其第一个拥有渲染层的父元素共用一个</strong>。</p>
+
+        <h3 id="从RenderLayers到GraphicsLayers"   >
+          <a href="#从RenderLayers到GraphicsLayers" class="heading-link"><i class="fas fa-link"></i></a><a href="#从RenderLayers到GraphicsLayers" class="headerlink" title="从RenderLayers到GraphicsLayers"></a>从RenderLayers到GraphicsLayers</h3>
+      <p><img src="https://img-blog.csdnimg.cn/2020122322401343.png#pic_center" alt="在这里插入图片描述"><br>这里就是层合成的关键一步，也就是composite。<br>在上面形成的渲染层后，某些特殊的渲染层会被层合成，合成层拥有单独的 GraphicsLayer，而<strong>其他不是合成层的渲染层，则和其第一个拥有 GraphicsLayer 父层公用一个</strong>。</p>
+<p>每个 GraphicsLayer 都有一个 GraphicsContext，GraphicsContext 会负责输出该层的位图，位图是存储在共享内存中，作为纹理上传到 GPU 中，最后由 GPU 将多个位图进行合成，然后 draw 到屏幕上，此时，我们的页面也就展现到了屏幕上。所以现在GPU收到了HTML元素的Graphics Layer的纹理，也可能还收到某些因为有3d transform之类属性而提升为Graphics Layer的元素的纹理。<br>    GraphicsContext 绘图上下文的责任就是向屏幕进行像素绘制(这个过程是先把像素级的数据写入位图中，然后再显示到显示器)。<br>ps：纹理：可以把它想象成一个从主存储器(RAM)移动到图像存储器(GPU中的VRAM)的位图图像。</p>
+<p>至此GPU可以将多个位图（也就是上面说的纹理）进行合成。同时，GPU在纹理合成时对于每一层纹理都可以指定不同的合成参数，从而实现对纹理进行transform、mask、opacity等等操作之后再合成，而且GPU对于这个过程是底层硬件加速的，性能很好。<strong>最终，纹理合成为一幅内容最终draw到屏幕上。</strong></p>
+<p><strong>由以上我们可以知道，一个RenderLayers映射着RenderObjects树上的一个或多个RenderObject，而一个GraphicsLayers映射着一个或多个RenderLayers。</strong></p>
+
+        <h2 id="2-composite的相关概念"   >
+          <a href="#2-composite的相关概念" class="heading-link"><i class="fas fa-link"></i></a><a href="#2-composite的相关概念" class="headerlink" title="2.composite的相关概念"></a>2.composite的相关概念</h2>
+      <p>影响composite的因素有很多，其先决条件有：</p>
+<ol>
+<li>  层用于已合成的插件</li>
+<li>  层使用CSS动画的不透明性，或使用一个动画webkit的变换</li>
+<li>  层使用加速CSS滤镜 opacity filters</li>
+<li>  层的后代是一个合成层</li>
+<li>  层具有较低的z-index的合成层的兄弟（换言之，层重叠在合成层上，应在它的上面被渲染）</li>
+<li>  will-change</li>
+<li>  层具有3D或者透视变换的CSS属性</li>
+<li>  层由<code>&lt;video&gt;</code>使用元素加速视频解码</li>
+<li>  层由一个<code>&lt;canvas&gt;</code>元素与3D环境或加速的2D背景</li>
+</ol>
+
+        <h3 id="隐式合成"   >
+          <a href="#隐式合成" class="heading-link"><i class="fas fa-link"></i></a><a href="#隐式合成" class="headerlink" title="隐式合成"></a>隐式合成</h3>
+      <p>层合成中有一种情况需要特别注意，很多情况下一些渲染层会因为其他元素而提升为合成层，就是隐式合成。即元素重叠在合成层上面。</p>
+<p>为什么重叠会发生层合成呢？<br><img src="https://img-blog.csdnimg.cn/20201224110814690.png#pic_center" alt="在这里插入图片描述"><br>蓝色的矩形重叠在绿色矩形之上，同时它们的父元素是一个 GraphicsLayer。此时假设绿色矩形为一个 GraphicsLayer，如果 overlap 无法提升合成层的话，那么蓝色矩形不会提升为合成层，也就会和父元素公用一个 GraphicsLayer。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020122411084972.png#pic_center" alt="在这里插入图片描述"><br>此时，渲染顺序就会发生错误，因此为保证渲染顺序，overlap 也成为了合成层产生的原因，也就是如下的正常情形。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201224110941604.png#pic_center" alt="在这里插入图片描述"><br>我们可以通过开发者工具来发现页面中的合成层以及相应的情况。<br><img   src="https://img-blog.csdnimg.cn/20201224113131952.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgzMDI3MQ==,size_16,color_FFFFFF,t_70#pic_center" style="width: image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,tepx;height: t_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgzMDI3MQpx;"  alt="在这里插入图片描述"></p>
+<p>譬如给页面中添加两个块，并声明此种样式，让一个div块重叠在一个div上</p>
+<figure class="highlight html"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"> 		body&gt;div &#123;</span><br><span class="line">            width: 200px;</span><br><span class="line">            height: 200px;</span><br><span class="line">        &#125;</span><br><span class="line">        div:nth-of-type(1) &#123;</span><br><span class="line">            position: relative;</span><br><span class="line">            background: salmon;</span><br><span class="line">        &#125;</span><br><span class="line">        div:nth-of-type(2) &#123;</span><br><span class="line">            position: relative;</span><br><span class="line">            margin-left: 100px;</span><br><span class="line">            margin-top: -100px;</span><br><span class="line">            background: steelblue;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></div></figure>
+<p>点击Chorme开发者工具下的More tools下的Layers，即可看到如下图<br><img   src="https://img-blog.csdnimg.cn/20201224202938376.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgzMDI3MQ==,size_16,color_FFFFFF,t_70#pic_center" style="width: image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,tepx;height: t_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgzMDI3MQpx;"  alt="在这里插入图片描述"><br>此时，我们声明transform让第一个div提升为合成层。</p>
+<figure class="highlight html"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">div:nth-of-type(1) &#123;</span><br><span class="line">        position: relative;</span><br><span class="line">        background: salmon;</span><br><span class="line">        transform: translateZ(0);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></div></figure>
+<p>这时候再来看看图层的摆放情况。<br><img   src="https://img-blog.csdnimg.cn/20201224203237816.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgzMDI3MQ==,size_16,color_FFFFFF,t_70#pic_center" style="width: image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,tepx;height: t_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgzMDI3MQpx;"  alt="在这里插入图片描述"><br>我们会发现，第一个div被提升到合成层后，第二个div块也跟着被提升到合成层了，因此我们可以看到左边栏里的层数量为3。分别是文档对象所在的层以及两个div块所在的层。</p>
+<figure class="highlight html"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">div:nth-of-type(1) &#123;</span><br><span class="line">        position: relative;</span><br><span class="line">        background: salmon;</span><br><span class="line">        transform: translateZ(0);</span><br><span class="line">        z-index: 2;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></div></figure>
+<p>我们可以通过设置index来打破overlap，让原先提升为合成层的div块放在上面，这样以来就可以看到第二个div块不会被隐式提升了，层的数量变回2。</p>
+<p><img   src="https://img-blog.csdnimg.cn/20201224204342494.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgzMDI3MQ==,size_16,color_FFFFFF,t_70#pic_center" style="width: image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,tepx;height: t_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgzMDI3MQpx;"  alt="在这里插入图片描述"></p>
+
+        <h3 id="内存消耗"   >
+          <a href="#内存消耗" class="heading-link"><i class="fas fa-link"></i></a><a href="#内存消耗" class="headerlink" title="内存消耗"></a>内存消耗</h3>
+      <p>需要注意的是，层合成是一个消耗内存的操作。尤其是我们上面提到的隐式合成，会在页面上产生大量的合成层，这样会占用cpu和很多内存资源，造成浪费。并且单个复合层需要的内存空间是昂贵的。</p>
+<p>试想以下一个复合层上的一个300px*240px的矩形，计算机为了将这样的图像绘制到屏幕上，计算机必须将其从图像格式中<strong>解压缩</strong>，然后将其表示为<strong>像素阵列</strong>。因此，我们的示例图像将占用320 × 240 × 3 = 230,400 bytes计算机内存。也就是说，我们将图片的宽度乘以图片的高度即可得出图片中的像素数。然后，将其乘以3，因为每个像素都用三个字节（RGB）描述。如果图像包含透明区域，我们会乘以4，因为一个额外的字节需要描述透明度：（RGBA） 320 × 240 × 4 = 307,200 bytes。</p>
+<p>浏览器始终将合成层绘制为RGBa图像。似乎没有有效的方法来确定元素是否包含透明区域。</p>
+<p>你可以试着在两个页面中分别创建2000个div块，其中一个页面所有div块都通过will-change来提升为合成层，这时你可以打开任务管理器或者开发者工具进行查看，这时你会发现该页面所耗的内存会增加许多。</p>
+
+        <h3 id="层压缩"   >
+          <a href="#层压缩" class="heading-link"><i class="fas fa-link"></i></a><a href="#层压缩" class="headerlink" title="层压缩"></a>层压缩</h3>
+      <p>上面提到的隐式合成会产生大量的合成层，但在这个过程中浏览器会帮我们进行层压缩。<strong>如果多个渲染层同一个合成层重叠时，这些渲染层会被压缩到一个 GraphicsLayer 中</strong>，以防止由于重叠原因导致可能出现的“层爆炸”。</p>
+
+        <h3 id="层爆炸"   >
+          <a href="#层爆炸" class="heading-link"><i class="fas fa-link"></i></a><a href="#层爆炸" class="headerlink" title="层爆炸"></a>层爆炸</h3>
+      <p>通过之前的介绍，我们知道同合成层重叠也会使元素提升为合成层，虽然有浏览器的层压缩机制，但是也有很多无法进行压缩的情况。也就是说除了我们显式的声明的合成层，还可能由于重叠原因不经意间产生一些不在预期的合成层，极端一点可能会产生大量的额外合成层，出现层爆炸的现象。<br>    解决层爆炸的问题，最佳方案是打破 overlap 的条件，也就是说<strong>让其他元素不要和合成层元素重叠</strong>，譬如巧妙的使用 z-index 属性。</p>
+
+        <h2 id="3-性能优化"   >
+          <a href="#3-性能优化" class="heading-link"><i class="fas fa-link"></i></a><a href="#3-性能优化" class="headerlink" title="3.性能优化"></a>3.性能优化</h2>
+      <p>我们已经知道，通过将元素提升为合成层并将位图输出给GPU进行处理，这比CPU的处理效率快很多，并且可以分担原先一部分CPU的工作，尤其是在动画这一方面。主要有以下几方面好处：</p>
+<ul>
+<li>合成层的位图，会交由 GPU 合成，比 CPU 处理要快</li>
+<li>当需要 repaint 时，只需要 repaint 本身，不会影响到其他的层</li>
+<li>元素提升为合成层后，transform 和 opacity 才不会触发 paint，如果不是合成层，则其依然会触发 paint。</li>
+</ul>
+<p>这些性能优化对页面的渲染性能、动画的平滑过渡都有好处，但是<strong>不恰当使用硬件加速反而会造成更多的开销和性能上的降低</strong>。尤其是对当今内存资源十分宝贵的移动端用户来说，合成层的内存消耗可能会使页面加载不流畅，出现卡顿和白屏闪烁的现象。</p>
+<hr style=" border:solid; width:100px; height:1px;" color=#000000 size=1">
+
+<p>浏览器的渲染性能问题，最终还是要回归到<strong>reflow</strong>和<strong>repaint</strong>这两方面，如何减少它们的发生是性能提升的关键。</p>
+
+        <h3 id="will-change"   >
+          <a href="#will-change" class="heading-link"><i class="fas fa-link"></i></a><a href="#will-change" class="headerlink" title="will-change"></a>will-change</h3>
+      <p> 动画会使页面不断的重绘，为了屏蔽对其他元素的影响，把运行动画的元素提升为合成层十分重要。提升合成层的最好方式是使用css的will-change属性，将will-change设置为left、top、right、bottom、opcity、transform可以将元素提升为合成层。</p>
+
+        <h3 id="transform、opcity"   >
+          <a href="#transform、opcity" class="heading-link"><i class="fas fa-link"></i></a><a href="#transform、opcity" class="headerlink" title="transform、opcity"></a>transform、opcity</h3>
+      <p>动画尽量使用transform、opcity这样不会触发reflow和repaint的属性操作元素。它们的改变不会影响到正常流或dom环境。因此譬如在操作background动画的时候，不直接使用background来transition，而是使用伪元素在上面附加一层透明层，每当鼠标放上去的时候，将透明度设回1。</p>
+<figure class="highlight html"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;bg-change&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">style</span>&gt;</span></span><br><span class="line">#bg-change &#123;</span><br><span class="line"><span class="css"> <span class="attribute">width</span>: <span class="number">100px</span>;</span></span><br><span class="line"><span class="css"> <span class="attribute">height</span>: <span class="number">100px</span>;</span></span><br><span class="line"><span class="css"> <span class="attribute">background</span>: red;</span></span><br><span class="line"><span class="css"> <span class="attribute">transition</span>: background <span class="number">0.4s</span>;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="css"><span class="selector-id">#bg-change</span><span class="selector-pseudo">:hover</span> &#123;</span></span><br><span class="line"><span class="css"> <span class="attribute">background</span>: blue;</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"></span><br><span class="line">//利用opcity来操作背景过渡效果</span><br><span class="line"><span class="tag">&lt;<span class="name">style</span>&gt;</span></span><br><span class="line">#bg-change &#123;</span><br><span class="line"><span class="css"> <span class="attribute">width</span>: <span class="number">100px</span>;</span></span><br><span class="line"><span class="css"> <span class="attribute">height</span>: <span class="number">100px</span>;</span></span><br><span class="line"><span class="css"> <span class="attribute">background</span>: red;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="css"><span class="selector-id">#bg-change</span><span class="selector-pseudo">::before</span> &#123;</span></span><br><span class="line"><span class="css"> <span class="attribute">background</span>: blue;</span></span><br><span class="line"><span class="css"> <span class="attribute">opacity</span>: <span class="number">0</span>;</span></span><br><span class="line"><span class="css"> <span class="attribute">transition</span>: opacity <span class="number">0.4s</span>;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="css"><span class="selector-id">#bg-change</span><span class="selector-pseudo">:hover</span><span class="selector-pseudo">::before</span> &#123;</span></span><br><span class="line"><span class="css"> <span class="attribute">opacity</span>: <span class="number">1</span>;</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br></pre></td></tr></table></div></figure>
+<p>上面的第二种方式，将会为我们节省重绘所产生的性能消耗。</p>
+
+        <h3 id="合理绘制"   >
+          <a href="#合理绘制" class="heading-link"><i class="fas fa-link"></i></a><a href="#合理绘制" class="headerlink" title="合理绘制"></a>合理绘制</h3>
+      <p>像对于一些页面中固定的位置，譬如fix定位的元素，这部分元素是不用重绘的。因此在页面渲染布局时，我们要思考哪些部分是要被重绘，哪些是不期望被重绘，是固定不变的。对于那些固定的部分，就自然不需要重绘，可以采用将它们提升为合成层，减少重绘区域，降低性能消耗</p>
+
+        <h3 id="合理使用合成层、防止层爆炸"   >
+          <a href="#合理使用合成层、防止层爆炸" class="heading-link"><i class="fas fa-link"></i></a><a href="#合理使用合成层、防止层爆炸" class="headerlink" title="合理使用合成层、防止层爆炸"></a>合理使用合成层、防止层爆炸</h3>
+      <p>有时我们可能想利用合成层渲染性能高的特性而不断创建新的合成层。但很多时候会造成隐式合成，带来更多不必要但复合层，从而产生层爆炸。这些层的开销远比硬件加速带给我们的性能提升要大。因此可以通过上面提到的为复合层设置合理的z-index来打破overlap，避免隐式合成。</p>
+
+        <h1 id="总结"   >
+          <a href="#总结" class="heading-link"><i class="fas fa-link"></i></a><a href="#总结" class="headerlink" title="总结"></a>总结</h1>
+      <p>切记不要为了硬件加速而硬件加速，开发中很多人喜欢通过translateZ(0)和will-change来提升层。但在此过程中要仔细评估层开销带来的损耗，有时候不利用硬件加速反倒性能比较高。这时候就需要通过渲染时间及内存开销等相关指标来评估。</p>
+<p>关于合成层的详细讲解，可以参考以下的文章<br><span class="exturl"><a class="exturl__link"   target="_blank" rel="noopener" href="https://www.jianshu.com/p/910451571a04" >前端性能优化之 Composite</a><span class="exturl__icon"><i class="fas fa-external-link-alt"></i></span></span><br><span class="exturl"><a class="exturl__link"   target="_blank" rel="noopener" href="https://juejin.cn/post/6844903502678867981" >详谈层合成</a><span class="exturl__icon"><i class="fas fa-external-link-alt"></i></span></span><br><span class="exturl"><a class="exturl__link"   target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000014520786" >浏览器渲染流程&amp;Composite（渲染层合并）简单总结</a><span class="exturl__icon"><i class="fas fa-external-link-alt"></i></span></span><br><span class="exturl"><a class="exturl__link"   target="_blank" rel="noopener" href="https://www.smashingmagazine.com/2016/12/gpu-animation-doing-it-right/" >CSS GPU Animation: Doing It Right</a><span class="exturl__icon"><i class="fas fa-external-link-alt"></i></span></span></p>
+</div><footer class="post-footer"><div class="post-ending ending"><div class="ending__text">------ END ------</div></div><div class="post-copyright copyright"><div class="copyright-author"><span class="copyright-author__name">Author: </span><span class="copyright-author__value"><a href="http://localhost:4000">Ivan</a></span></div><div class="copyright-link"><span class="copyright-link__name">Link: </span><span class="copyright-link__value"><a href="http://localhost:4000/2021/02/25/%E6%B5%8F%E8%A7%88%E5%99%A8%E9%A1%B5%E9%9D%A2%E6%B8%B2%E6%9F%93%E4%B9%8Bcomposite/">http://localhost:4000/2021/02/25/%E6%B5%8F%E8%A7%88%E5%99%A8%E9%A1%B5%E9%9D%A2%E6%B8%B2%E6%9F%93%E4%B9%8Bcomposite/</a></span></div><div class="copyright-notice"><span class="copyright-notice__name">Copyright: </span><span class="copyright-notice__value">All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" rel="external nofollow" target="_blank">BY-NC-SA</a> unless stating additionally</span></div></div><div class="post-tags"><span class="post-tags-item"><span class="post-tags-item__icon"><i class="fas fa-tag"></i></span><a class="post-tags-item__link" href="http://localhost:4000/tags/%E6%B5%8F%E8%A7%88%E5%99%A8/">浏览器</a></span></div><nav class="post-paginator paginator"><div class="paginator-prev"><a class="paginator-prev__link" href="/2021/02/25/%E4%BB%B7%E5%80%BC%E8%A7%82/"><span class="paginator-prev__icon"><i class="fas fa-angle-left"></i></span><span class="paginator-prev__text">价值观</span></a></div><div class="paginator-next"><a class="paginator-next__link" href="/2021/02/23/javascript%E4%B9%8B%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF/"><span class="paginator-prev__text">javascript之事件循环</span><span class="paginator-next__icon"><i class="fas fa-angle-right"></i></span></a></div></nav></footer></div></div></div><div class="sidebar-wrap" id="sidebar-wrap"><aside class="sidebar" id="sidebar"><div class="sidebar-nav"><span class="sidebar-nav-toc current">文章目录</span><span class="sidebar-nav-ov">站点概述</span></div><section class="sidebar-toc"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">
+          前言</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F"><span class="toc-number">1.1.</span> <span class="toc-text">
+          硬件加速</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F%E7%9A%84%E5%A5%BD%E5%A4%84"><span class="toc-number">1.2.</span> <span class="toc-text">
+          硬件加速的好处</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%9B%9E%E9%A1%BE%E6%B8%B2%E6%9F%93%E8%BF%87%E7%A8%8B"><span class="toc-number">2.</span> <span class="toc-text">
+          一、回顾渲染过程</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81composite%EF%BC%9F"><span class="toc-number">3.</span> <span class="toc-text">
+          二、composite？</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%BD%95%E4%B8%BAcomposite%EF%BC%9F"><span class="toc-number">3.1.</span> <span class="toc-text">
+          1.何为composite？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#node-%E5%88%B0-LayoutObject"><span class="toc-number">3.1.1.</span> <span class="toc-text">
+          node 到 LayoutObject</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#LayoutObjects-%E5%88%B0-RenderLayers"><span class="toc-number">3.1.2.</span> <span class="toc-text">
+          LayoutObjects 到 RenderLayers</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8ERenderLayers%E5%88%B0GraphicsLayers"><span class="toc-number">3.1.3.</span> <span class="toc-text">
+          从RenderLayers到GraphicsLayers</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-composite%E7%9A%84%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5"><span class="toc-number">3.2.</span> <span class="toc-text">
+          2.composite的相关概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9A%90%E5%BC%8F%E5%90%88%E6%88%90"><span class="toc-number">3.2.1.</span> <span class="toc-text">
+          隐式合成</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E6%B6%88%E8%80%97"><span class="toc-number">3.2.2.</span> <span class="toc-text">
+          内存消耗</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B1%82%E5%8E%8B%E7%BC%A9"><span class="toc-number">3.2.3.</span> <span class="toc-text">
+          层压缩</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B1%82%E7%88%86%E7%82%B8"><span class="toc-number">3.2.4.</span> <span class="toc-text">
+          层爆炸</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96"><span class="toc-number">3.3.</span> <span class="toc-text">
+          3.性能优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#will-change"><span class="toc-number">3.3.1.</span> <span class="toc-text">
+          will-change</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#transform%E3%80%81opcity"><span class="toc-number">3.3.2.</span> <span class="toc-text">
+          transform、opcity</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%88%E7%90%86%E7%BB%98%E5%88%B6"><span class="toc-number">3.3.3.</span> <span class="toc-text">
+          合理绘制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%88%E7%90%86%E4%BD%BF%E7%94%A8%E5%90%88%E6%88%90%E5%B1%82%E3%80%81%E9%98%B2%E6%AD%A2%E5%B1%82%E7%88%86%E7%82%B8"><span class="toc-number">3.3.4.</span> <span class="toc-text">
+          合理使用合成层、防止层爆炸</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">
+          总结</span></a></li></ol></section><!-- ov = overview--><section class="sidebar-ov hide"><div class="sidebar-ov-author"><div class="sidebar-ov-author__avatar"><img class="sidebar-ov-author__avatar_img" src="/images/author-avatar.jpeg" alt="avatar"></div><p class="sidebar-ov-author__text">因上努力 果上随缘</p></div><div class="sidebar-ov-state"><a class="sidebar-ov-state-item sidebar-ov-state-item--posts" href="/archives/"><div class="sidebar-ov-state-item__count">21</div><div class="sidebar-ov-state-item__name">文章</div></a><a class="sidebar-ov-state-item sidebar-ov-state-item--tags" href="/tags/"><div class="sidebar-ov-state-item__count">5</div><div class="sidebar-ov-state-item__name">标签</div></a></div><div class="sidebar-ov-cc"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener" data-popover="Creative Commons" data-popover-pos="up"><img src="/images/cc-by-nc-sa.svg"></a></div></section><div class="sidebar-reading"><div class="sidebar-reading-info"><span class="sidebar-reading-info__text">You have read </span><span class="sidebar-reading-info__num">0</span><span class="sidebar-reading-info__perc">%</span></div><div class="sidebar-reading-line"></div></div></aside></div><div class="clearfix"></div></div></main><footer class="footer" id="footer"><div class="footer-inner"><div><span>Copyright © 2021</span><span class="footer__icon"><i class="fas fa-heart"></i></span><span>Ivan</span></div><div><span>Powered by <a href="http://hexo.io/" title="Hexo" target="_blank" rel="noopener">Hexo</a></span><span> v5.3.0</span><span class="footer__devider">|</span><span>Theme - <a href="https://github.com/liuyib/hexo-theme-stun/" title="Stun" target="_blank" rel="noopener">Stun</a></span><span> v2.6.2</span></div></div></footer><div class="loading-bar" id="loading-bar"><div class="loading-bar__progress"></div></div><div class="back2top" id="back2top"><span class="back2top__icon"><i class="fas fa-rocket"></i></span></div></div><script src="https://cdn.jsdelivr.net/npm/jquery@v3.4.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.ui.min.js"></script><script src="/js/utils.js?v=2.6.2"></script><script src="/js/stun-boot.js?v=2.6.2"></script><script src="/js/scroll.js?v=2.6.2"></script><script src="/js/header.js?v=2.6.2"></script><script src="/js/sidebar.js?v=2.6.2"></script></body></html>
