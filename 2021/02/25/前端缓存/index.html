@@ -1,0 +1,113 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="format-detection" content="telephone=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><link rel="icon" href="/my_favicon/favicon-16x16.png?v=2.6.2" type="image/png" sizes="16x16"><link rel="icon" href="/my_favicon/favicon-32x32.png?v=2.6.2" type="image/png" sizes="32x32"><meta name="description" content="前端缓存对于性能优化来说也是十分重要的，这里浅谈一下http的两大缓存。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="前端缓存">
+<meta property="og:url" content="http://ivan-shork.github.io/2021/02/25/%E5%89%8D%E7%AB%AF%E7%BC%93%E5%AD%98/index.html">
+<meta property="og:site_name" content="Ivan Shork">
+<meta property="og:description" content="前端缓存对于性能优化来说也是十分重要的，这里浅谈一下http的两大缓存。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-02-25T08:44:20.000Z">
+<meta property="article:modified_time" content="2021-02-25T09:11:56.499Z">
+<meta property="article:author" content="Ivan">
+<meta property="article:tag" content="前端">
+<meta name="twitter:card" content="summary"><title>前端缓存 | Ivan Shork</title><link ref="canonical" href="http://ivan-shork.github.io/2021/02/25/%E5%89%8D%E7%AB%AF%E7%BC%93%E5%AD%98/"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.12.1/css/all.min.css" type="text/css"><link rel="stylesheet" href="/css/index.css?v=2.6.2"><script>var Stun = window.Stun || {};
+var CONFIG = {
+  root: '/',
+  algolia: undefined,
+  assistSearch: undefined,
+  fontIcon: {"prompt":{"success":"fas fa-check-circle","info":"fas fa-arrow-circle-right","warning":"fas fa-exclamation-circle","error":"fas fa-times-circle"},"copyBtn":"fas fa-copy"},
+  sidebar: {"offsetTop":"20px","tocMaxDepth":6},
+  header: {"enable":true,"showOnPost":false,"scrollDownIcon":false},
+  postWidget: {"endText":true},
+  nightMode: {"enable":true},
+  back2top: {"enable":true},
+  codeblock: {"style":"default","highlight":"light","wordWrap":false},
+  reward: false,
+  fancybox: false,
+  zoomImage: {"gapAside":"20px"},
+  galleryWaterfall: undefined,
+  lazyload: false,
+  pjax: undefined,
+  externalLink: {"icon":{"enable":true,"name":"fas fa-external-link-alt"}},
+  shortcuts: undefined,
+  prompt: {"copyButton":"Copy","copySuccess":"Copy Success","copyError":"Copy Error"},
+  sourcePath: {"js":"js","css":"css","images":"images"},
+};
+
+window.CONFIG = CONFIG;</script><meta name="generator" content="Hexo 5.3.0"></head><body><div class="container" id="container"><header class="header" id="header"><div class="header-inner header-inner--height header-inner--bgcolor"><nav class="header-nav header-nav--sticky"><div class="header-nav-inner"><div class="header-nav-menubtn"><i class="fas fa-bars"></i></div><div class="header-nav-menu"><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/"><span class="header-nav-menu-item__icon"><i class="fas fa-home"></i></span><span class="header-nav-menu-item__text">Home</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/archives/"><span class="header-nav-menu-item__icon"><i class="fas fa-folder-open"></i></span><span class="header-nav-menu-item__text">Archives</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/tags/"><span class="header-nav-menu-item__icon"><i class="fas fa-tags"></i></span><span class="header-nav-menu-item__text">Tags</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/my-info/"><span class="header-nav-menu-item__icon"><i class="fas fa-info"></i></span><span class="header-nav-menu-item__text">Me</span></a></div></div><div class="header-nav-mode"><div class="mode"><div class="mode-track"><span class="mode-track-moon"></span><span class="mode-track-sun"></span></div><div class="mode-thumb"></div></div></div></div></nav></div></header><main class="main" id="main"><div class="main-inner"><div class="content-wrap" id="content-wrap"><div class="content" id="content"><!-- Just used to judge whether it is an article page--><div id="is-post"></div><div class="post"><header class="post-header"><h1 class="post-title">前端缓存</h1><div class="post-meta"><span class="post-meta-item post-meta-item--createtime"><span class="post-meta-item__icon"><i class="far fa-calendar-plus"></i></span><span class="post-meta-item__info">创建时间</span><span class="post-meta-item__value">2021-02-25</span></span><span class="post-meta-item post-meta-item--updatetime"><span class="post-meta-item__icon"><i class="far fa-calendar-check"></i></span><span class="post-meta-item__info">更新时间</span><span class="post-meta-item__value">2021-02-25</span></span><span class="post-meta-item post-meta-item--wordcount"><span class="post-meta-item__icon"><i class="far fa-file-word"></i></span><span class="post-meta-item__info">字数统计</span><span class="post-meta-item__value">1.1k</span></span><span class="post-meta-item post-meta-item--readtime"><span class="post-meta-item__icon"><i class="far fa-clock"></i></span><span class="post-meta-item__info">阅读时间</span><span class="post-meta-item__value">6m</span></span></div></header><div class="post-body"><p>前端缓存的范围很广，比如协议层的DNS解析缓存、代理服务器缓存（CDN缓存）、客户端浏览器的缓存、服务端的缓存。一个网络链路的每个环节都有被缓存的空间。</p>
+<p><strong>缓存的目的是简化资源的请求路径</strong>，如某些静态资源在客户端已经缓存了，再次请求资源就可以直接使用本地缓存，不用再到服务端获取。</p>
+<p>其中浏览器缓存包括:<strong>http缓存、cookie缓存、local storage本地缓存。</strong> 这里我们主要谈谈http缓存。</p>
+
+        <h1 id="http缓存"   >
+          <a href="#http缓存" class="heading-link"><i class="fas fa-link"></i></a><a href="#http缓存" class="headerlink" title="http缓存"></a>http缓存</h1>
+      <p>http缓存又分为强缓存和协商缓存两种，这里我们先引入以下几个概念。</p>
+
+        <h2 id="Cache-Control"   >
+          <a href="#Cache-Control" class="heading-link"><i class="fas fa-link"></i></a><a href="#Cache-Control" class="headerlink" title="Cache-Control"></a>Cache-Control</h2>
+      <p>请求/响应头，缓存控制字段，可以说是控制http缓存的最高指令，要不要缓存也是它说了算。</p>
+<p>它有以下常用值:</p>
+<ol>
+<li>no-store：所有内容都不缓存。</li>
+<li>no-cache：缓存，但是立即失效。因此浏览器使用缓存前，都会请求服务器判断缓存资源是否是最新，它是个比较高贵的存在，因为<strong>它只用最新的缓存</strong>。</li>
+<li>max-age=x(单位秒) 请求缓存后的X秒不再发起请求，属于http1.1属性，与下方Expires(http1.0属性)类似，但<strong>优先级要比Expires高</strong>。</li>
+<li>s-maxage=x(单位秒) <strong>代理服务器</strong>请求源站缓存后的X秒不再发起请求，只对CDN缓存有效。</li>
+<li>public **客户端和代理服务器(CDN)**都可缓存。</li>
+<li>private 只有<strong>客户端</strong>可以缓存。</li>
+</ol>
+
+        <h2 id="Expires"   >
+          <a href="#Expires" class="heading-link"><i class="fas fa-link"></i></a><a href="#Expires" class="headerlink" title="Expires"></a>Expires</h2>
+      <p>响应头，代表资源过期时间，由服务器返回提供，GMT格式日期，是http1.0的属性，在与max-age(http1.1)共存的情况下，优先级要低。 </p>
+<ol>
+<li> ⚠️如若修改了本地时间，可能会造成缓存失效，因此使用max-age比较好</li>
+<li> ⚠️Last-Modified的时间只能精确到秒，如果在一秒内多次修改则无法判断资源被修改</li>
+<li>
+        <h2 id="Last-Modified"   >
+          <a href="#Last-Modified" class="heading-link"><i class="fas fa-link"></i></a><a href="#Last-Modified" class="headerlink" title="Last-Modified"></a>Last-Modified</h2>
+      响应头，资源最新修改时间，由服务器告诉浏览器。</li>
+</ol>
+
+        <h2 id="if-Modified-Since"   >
+          <a href="#if-Modified-Since" class="heading-link"><i class="fas fa-link"></i></a><a href="#if-Modified-Since" class="headerlink" title="if-Modified-Since"></a>if-Modified-Since</h2>
+      <p>请求头，资源最新修改时间，由浏览器告诉服务器(其实就是上次服务器给的Last-Modified，请求又还给服务器对比)，和Last-Modified是一对，它两会进行对比。</p>
+
+        <h2 id="Etag"   >
+          <a href="#Etag" class="heading-link"><i class="fas fa-link"></i></a><a href="#Etag" class="headerlink" title="Etag"></a>Etag</h2>
+      <p>响应头，资源唯一标识，由服务器告诉浏览器。</p>
+
+        <h2 id="if-None-Match"   >
+          <a href="#if-None-Match" class="heading-link"><i class="fas fa-link"></i></a><a href="#if-None-Match" class="headerlink" title="if-None-Match"></a>if-None-Match</h2>
+      <p>请求头，缓存资源标识，由浏览器告诉服务器(其实就是上次服务器给的Etag)，和Etag是一对，它两会进行对比。</p>
+
+        <h1 id="缓存流程"   >
+          <a href="#缓存流程" class="heading-link"><i class="fas fa-link"></i></a><a href="#缓存流程" class="headerlink" title="缓存流程"></a>缓存流程</h1>
+      <ol>
+<li> 在发起请求的时候，浏览器首先会检查当前时间是否大于Expires，如若小于的话，则证明缓存没过期，直接使用本地缓存。如若缓存过期，则需要知道服务器的资源是否是最新资源。<br>⚠️expires不稳定，一般用的是max-age，两者同时存在，max-age优先级较高。</li>
+<li>检查缓存是否过期:      <ul>
+<li>  若缓存没有过期，则命中缓存，直接使用本地缓存。这叫<strong>强缓存</strong>。</li>
+<li>若缓存过期，浏览器请求服务器，服务器将上次文件的修改时间last-modified和文件最新修改时间if-modified-since进行对比。（⚠️Last-Modified和ETag可以同时使用，但ETag的优先级较高，会先比较ETag，如果相同才会去比较Last-Modified，最终由服务器决定是否返回304）<ul>
+<li>  若资源没修改过，则返回304，告诉浏览器使用本地资源。这叫<strong>协商缓存</strong>。</li>
+<li>  若资源更新过，则返回最新资源给浏览器。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+
+        <h1 id="两种缓存策略？"   >
+          <a href="#两种缓存策略？" class="heading-link"><i class="fas fa-link"></i></a><a href="#两种缓存策略？" class="headerlink" title="两种缓存策略？"></a>两种缓存策略？</h1>
+      <p>其中<strong>强缓存</strong>就是缓存未过期，直接命中本地缓存。<br>协商缓存就是缓存过期，服务器端进行比对判断资源是否更新，从而决定客户端是继续使用本地缓存还是重新发送请求给服务端。若继续使用本地缓存，这叫<strong>协商缓存</strong>。</p>
+
+        <h1 id="缓存设置"   >
+          <a href="#缓存设置" class="heading-link"><i class="fas fa-link"></i></a><a href="#缓存设置" class="headerlink" title="缓存设置"></a>缓存设置</h1>
+      <p>通过设置html页面的元信息meta来控制页面缓存。<br><code>&lt;meta http-equiv=&quot;Expires&quot; content=&quot;0&quot; /&gt;</code><br><code>&lt;meta http-equiv=“Cache-control” content=“no-cache,max-age,must-revalidate,no-store”&gt;</code></p>
+</div><footer class="post-footer"><div class="post-ending ending"><div class="ending__text">------ END ------</div></div><div class="post-copyright copyright"><div class="copyright-author"><span class="copyright-author__name">Author: </span><span class="copyright-author__value"><a href="http://ivan-shork.github.io">Ivan</a></span></div><div class="copyright-link"><span class="copyright-link__name">Link: </span><span class="copyright-link__value"><a href="http://ivan-shork.github.io/2021/02/25/%E5%89%8D%E7%AB%AF%E7%BC%93%E5%AD%98/">http://ivan-shork.github.io/2021/02/25/%E5%89%8D%E7%AB%AF%E7%BC%93%E5%AD%98/</a></span></div><div class="copyright-notice"><span class="copyright-notice__name">Copyright: </span><span class="copyright-notice__value">All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" rel="external nofollow" target="_blank">BY-NC-SA</a> unless stating additionally</span></div></div><div class="post-tags"><span class="post-tags-item"><span class="post-tags-item__icon"><i class="fas fa-tag"></i></span><a class="post-tags-item__link" href="http://ivan-shork.github.io/tags/%E5%89%8D%E7%AB%AF/">前端</a></span></div><nav class="post-paginator paginator"><div class="paginator-prev"><a class="paginator-prev__link" href="/2021/02/25/DOM-%E4%BA%8B%E4%BB%B6%E6%B5%81/"><span class="paginator-prev__icon"><i class="fas fa-angle-left"></i></span><span class="paginator-prev__text">DOM 事件流</span></a></div><div class="paginator-next"><a class="paginator-next__link" href="/2021/02/25/%E9%A1%B9%E7%9B%AE%E4%B8%AD%E9%85%8D%E7%BD%AEless%E5%85%A8%E5%B1%80/"><span class="paginator-prev__text">项目中配置less全局</span><span class="paginator-next__icon"><i class="fas fa-angle-right"></i></span></a></div></nav></footer></div></div></div><div class="sidebar-wrap" id="sidebar-wrap"><aside class="sidebar" id="sidebar"><div class="sidebar-nav"><span class="sidebar-nav-toc current">文章目录</span><span class="sidebar-nav-ov">站点概述</span></div><section class="sidebar-toc"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#http%E7%BC%93%E5%AD%98"><span class="toc-number">1.</span> <span class="toc-text">
+          http缓存</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Cache-Control"><span class="toc-number">1.1.</span> <span class="toc-text">
+          Cache-Control</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Expires"><span class="toc-number">1.2.</span> <span class="toc-text">
+          Expires</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Last-Modified"><span class="toc-number">1.3.</span> <span class="toc-text">
+          Last-Modified</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#if-Modified-Since"><span class="toc-number">1.4.</span> <span class="toc-text">
+          if-Modified-Since</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Etag"><span class="toc-number">1.5.</span> <span class="toc-text">
+          Etag</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#if-None-Match"><span class="toc-number">1.6.</span> <span class="toc-text">
+          if-None-Match</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BC%93%E5%AD%98%E6%B5%81%E7%A8%8B"><span class="toc-number">2.</span> <span class="toc-text">
+          缓存流程</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%A4%E7%A7%8D%E7%BC%93%E5%AD%98%E7%AD%96%E7%95%A5%EF%BC%9F"><span class="toc-number">3.</span> <span class="toc-text">
+          两种缓存策略？</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BC%93%E5%AD%98%E8%AE%BE%E7%BD%AE"><span class="toc-number">4.</span> <span class="toc-text">
+          缓存设置</span></a></li></ol></section><!-- ov = overview--><section class="sidebar-ov hide"><div class="sidebar-ov-author"><div class="sidebar-ov-author__avatar"><img class="sidebar-ov-author__avatar_img" src="/images/author-avatar.jpeg" alt="avatar"></div><p class="sidebar-ov-author__text">因上努力 果上随缘</p></div><div class="sidebar-ov-state"><a class="sidebar-ov-state-item sidebar-ov-state-item--posts" href="/archives/"><div class="sidebar-ov-state-item__count">27</div><div class="sidebar-ov-state-item__name">文章</div></a><a class="sidebar-ov-state-item sidebar-ov-state-item--tags" href="/tags/"><div class="sidebar-ov-state-item__count">7</div><div class="sidebar-ov-state-item__name">标签</div></a></div><div class="sidebar-ov-cc"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener" data-popover="Creative Commons" data-popover-pos="up"><img src="/images/cc-by-nc-sa.svg"></a></div></section><div class="sidebar-reading"><div class="sidebar-reading-info"><span class="sidebar-reading-info__text">You have read </span><span class="sidebar-reading-info__num">0</span><span class="sidebar-reading-info__perc">%</span></div><div class="sidebar-reading-line"></div></div></aside></div><div class="clearfix"></div></div></main><footer class="footer" id="footer"><div class="footer-inner"><div><span>Copyright © 2021</span><span class="footer__icon"><i class="fas fa-heart"></i></span><span>Ivan</span></div><div><span>Powered by <a href="http://hexo.io/" title="Hexo" target="_blank" rel="noopener">Hexo</a></span><span> v5.3.0</span><span class="footer__devider">|</span><span>Theme - <a href="https://github.com/liuyib/hexo-theme-stun/" title="Stun" target="_blank" rel="noopener">Stun</a></span><span> v2.6.2</span></div></div></footer><div class="loading-bar" id="loading-bar"><div class="loading-bar__progress"></div></div><div class="back2top" id="back2top"><span class="back2top__icon"><i class="fas fa-rocket"></i></span></div></div><script src="https://cdn.jsdelivr.net/npm/jquery@v3.4.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.ui.min.js"></script><script src="/js/utils.js?v=2.6.2"></script><script src="/js/stun-boot.js?v=2.6.2"></script><script src="/js/scroll.js?v=2.6.2"></script><script src="/js/header.js?v=2.6.2"></script><script src="/js/sidebar.js?v=2.6.2"></script></body></html>
