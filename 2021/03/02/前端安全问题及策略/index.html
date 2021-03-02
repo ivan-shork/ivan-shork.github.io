@@ -1,0 +1,170 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="format-detection" content="telephone=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><link rel="icon" href="/my_favicon/favicon-16x16.png?v=2.6.2" type="image/png" sizes="16x16"><link rel="icon" href="/my_favicon/favicon-32x32.png?v=2.6.2" type="image/png" sizes="32x32"><meta name="description" content="XSS跨站脚本攻击        XSS攻击全称跨站脚本攻击，XSS是一种在web应用中的计算机安全漏洞，它允许恶意web用户将代码植入到提供给其它用户使用的页面中。  常见的 XSS 攻击有三种：  DOM-based型 反射型 持久型  反射型、DOM-based 型可以归类为非持久型 XSS 攻击。存储型归类为持久型 XSS 攻击。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="前端安全问题及策略">
+<meta property="og:url" content="http://ivan-shork.github.io/2021/03/02/%E5%89%8D%E7%AB%AF%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98%E5%8F%8A%E7%AD%96%E7%95%A5/index.html">
+<meta property="og:site_name" content="Ivan Shork">
+<meta property="og:description" content="XSS跨站脚本攻击        XSS攻击全称跨站脚本攻击，XSS是一种在web应用中的计算机安全漏洞，它允许恶意web用户将代码植入到提供给其它用户使用的页面中。  常见的 XSS 攻击有三种：  DOM-based型 反射型 持久型  反射型、DOM-based 型可以归类为非持久型 XSS 攻击。存储型归类为持久型 XSS 攻击。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-03-02T13:52:03.000Z">
+<meta property="article:modified_time" content="2021-03-02T15:28:28.982Z">
+<meta property="article:author" content="Ivan">
+<meta property="article:tag" content="安全">
+<meta name="twitter:card" content="summary"><title>前端安全问题及策略 | Ivan Shork</title><link ref="canonical" href="http://ivan-shork.github.io/2021/03/02/%E5%89%8D%E7%AB%AF%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98%E5%8F%8A%E7%AD%96%E7%95%A5/"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.12.1/css/all.min.css" type="text/css"><link rel="stylesheet" href="/css/index.css?v=2.6.2"><script>var Stun = window.Stun || {};
+var CONFIG = {
+  root: '/',
+  algolia: undefined,
+  assistSearch: undefined,
+  fontIcon: {"prompt":{"success":"fas fa-check-circle","info":"fas fa-arrow-circle-right","warning":"fas fa-exclamation-circle","error":"fas fa-times-circle"},"copyBtn":"fas fa-copy"},
+  sidebar: {"offsetTop":"20px","tocMaxDepth":6},
+  header: {"enable":true,"showOnPost":false,"scrollDownIcon":false},
+  postWidget: {"endText":true},
+  nightMode: {"enable":true},
+  back2top: {"enable":true},
+  codeblock: {"style":"default","highlight":"light","wordWrap":false},
+  reward: false,
+  fancybox: false,
+  zoomImage: {"gapAside":"20px"},
+  galleryWaterfall: undefined,
+  lazyload: false,
+  pjax: undefined,
+  externalLink: {"icon":{"enable":true,"name":"fas fa-external-link-alt"}},
+  shortcuts: undefined,
+  prompt: {"copyButton":"Copy","copySuccess":"Copy Success","copyError":"Copy Error"},
+  sourcePath: {"js":"js","css":"css","images":"images"},
+};
+
+window.CONFIG = CONFIG;</script><meta name="generator" content="Hexo 5.3.0"></head><body><div class="container" id="container"><header class="header" id="header"><div class="header-inner header-inner--height header-inner--bgcolor"><nav class="header-nav header-nav--sticky"><div class="header-nav-inner"><div class="header-nav-menubtn"><i class="fas fa-bars"></i></div><div class="header-nav-menu"><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/"><span class="header-nav-menu-item__icon"><i class="fas fa-home"></i></span><span class="header-nav-menu-item__text">Home</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/archives/"><span class="header-nav-menu-item__icon"><i class="fas fa-folder-open"></i></span><span class="header-nav-menu-item__text">Archives</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/tags/"><span class="header-nav-menu-item__icon"><i class="fas fa-tags"></i></span><span class="header-nav-menu-item__text">Tags</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/my-info/"><span class="header-nav-menu-item__icon"><i class="fas fa-info"></i></span><span class="header-nav-menu-item__text">Me</span></a></div></div><div class="header-nav-mode"><div class="mode"><div class="mode-track"><span class="mode-track-moon"></span><span class="mode-track-sun"></span></div><div class="mode-thumb"></div></div></div></div></nav></div></header><main class="main" id="main"><div class="main-inner"><div class="content-wrap" id="content-wrap"><div class="content" id="content"><!-- Just used to judge whether it is an article page--><div id="is-post"></div><div class="post"><header class="post-header"><h1 class="post-title">前端安全问题及策略</h1><div class="post-meta"><span class="post-meta-item post-meta-item--createtime"><span class="post-meta-item__icon"><i class="far fa-calendar-plus"></i></span><span class="post-meta-item__info">创建时间</span><span class="post-meta-item__value">2021-03-02</span></span><span class="post-meta-item post-meta-item--updatetime"><span class="post-meta-item__icon"><i class="far fa-calendar-check"></i></span><span class="post-meta-item__info">更新时间</span><span class="post-meta-item__value">2021-03-02</span></span><span class="post-meta-item post-meta-item--wordcount"><span class="post-meta-item__icon"><i class="far fa-file-word"></i></span><span class="post-meta-item__info">字数统计</span><span class="post-meta-item__value">2.2k</span></span><span class="post-meta-item post-meta-item--readtime"><span class="post-meta-item__icon"><i class="far fa-clock"></i></span><span class="post-meta-item__info">阅读时间</span><span class="post-meta-item__value">13m</span></span></div></header><div class="post-body">
+        <h1 id="XSS跨站脚本攻击"   >
+          <a href="#XSS跨站脚本攻击" class="heading-link"><i class="fas fa-link"></i></a><a href="#XSS跨站脚本攻击" class="headerlink" title="XSS跨站脚本攻击"></a>XSS跨站脚本攻击</h1>
+      <blockquote>
+<p>XSS攻击全称跨站脚本攻击，XSS是一种在web应用中的计算机安全漏洞，它允许恶意web用户将代码植入到提供给其它用户使用的页面中。</p>
+</blockquote>
+<p>常见的 XSS 攻击有三种：</p>
+<ul>
+<li>DOM-based型</li>
+<li>反射型</li>
+<li>持久型</li>
+</ul>
+<p>反射型、DOM-based 型可以归类为非持久型 XSS 攻击。存储型归类为持久型 XSS 攻击。</p>
+
+        <h2 id="DOM-based型"   >
+          <a href="#DOM-based型" class="heading-link"><i class="fas fa-link"></i></a><a href="#DOM-based型" class="headerlink" title="DOM-based型"></a>DOM-based型</h2>
+      <p>基于 DOM 的 XSS 攻击是指通过恶意脚本修改<strong>页面的 DOM 结构</strong>，是纯粹发生在客户端的攻击，是javascript编写存在漏洞造成的。<br>它不需要服务器解析响应的直接参与，触发XSS靠的是<strong>浏览器端的DOM解析</strong>。</p>
+<p>主要有：</p>
+<ul>
+<li>  DOM的操作：document.create document.body …</li>
+<li>  输出html内容: document.write document.writeln innerHTML outerHTML …</li>
+<li>  document相关链接: document.url document.location(直接给href、host、hostname属性赋值)…</li>
+<li>  窗口:document.open window.open window.location.href=…</li>
+<li>  脚本执行: eval setTimeout setInterval</li>
+</ul>
+<p>这些文档或者全局的api，都能把字符串作为代码运行。如果不可信的数据拼接到字符串中传递给这些 API，很容易产生安全隐患。</p>
+
+        <h2 id="反射型"   >
+          <a href="#反射型" class="heading-link"><i class="fas fa-link"></i></a><a href="#反射型" class="headerlink" title="反射型"></a>反射型</h2>
+      <p>反射型的 XSS 攻击，主要是由于服务端接收到客户端的不安全输入，在客户端触发执行从而发起 Web 攻击。</p>
+<p>具体而言，反射型 XSS 只是简单地把用户输入的数据 “反射” 给浏览器，这种攻击方式往往需要攻击者诱使用户点击一个<strong>恶意链接</strong>，或者提交一个<strong>表单</strong>，或者进入一个恶意网站时，注入脚本进入被攻击者的网站。这是一种非持久型的攻击。</p>
+<p>比如在提交表单的文本框中输入<code>&lt;script&gt;alert(&#39;javascript&#39;)&lt;/script&gt;</code>，这样服务端收到这个提交的文本后没有进行过滤就返回给客户端解析，会引发安全漏洞。</p>
+
+        <h2 id="持久性"   >
+          <a href="#持久性" class="heading-link"><i class="fas fa-link"></i></a><a href="#持久性" class="headerlink" title="持久性"></a>持久性</h2>
+      <p>基于存储的 XSS 攻击，是通过提交带有恶意脚本的内容存储在服务器上，在下一次拉取内容交互的时候会产生安全攻击。一般提交的内容都是通过一些富文本编辑器编辑的，很容易插入危险代码。</p>
+<p>譬如有恶意者在编写博客的时候注入了一段恶意的代码，并将这篇文章post到服务端去。服务端将这篇带有恶意代码的文章存储在数据库中，这样一来，当其他人点击访问这篇文章的时候，就会受到该恶意代码的攻击。这只是一个简单例子。</p>
+
+        <h2 id="防御XSS"   >
+          <a href="#防御XSS" class="heading-link"><i class="fas fa-link"></i></a><a href="#防御XSS" class="headerlink" title="防御XSS"></a>防御XSS</h2>
+      <p>XSS攻击的主要特点就是:</p>
+<ul>
+<li>  攻击者注入恶意代码</li>
+<li>  浏览器执行恶意代码</li>
+</ul>
+
+        <h3 id="转义"   >
+          <a href="#转义" class="heading-link"><i class="fas fa-link"></i></a><a href="#转义" class="headerlink" title="转义"></a>转义</h3>
+      <p>根本的方法就是对用户的输入应该永远不信任，所以就是对输入和输出的内容进行转义。</p>
+<p>针对 HTML 代码的编码方式是 HTMLEncode，它的作用是将字符串转换成 HTMLEntities。目前来说，为了对抗 XSS，需要对以下六个字符进行实体化转义。</p>
+<figure class="highlight js"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">escape</span>(<span class="params">str</span>) </span>&#123;</span><br><span class="line">  str = str.replace(<span class="regexp">/&amp;/g</span>, <span class="string">&#x27;&amp;amp;&#x27;</span>)</span><br><span class="line">  str = str.replace(<span class="regexp">/&lt;/g</span>, <span class="string">&#x27;&amp;lt;&#x27;</span>)</span><br><span class="line">  str = str.replace(<span class="regexp">/&gt;/g</span>, <span class="string">&#x27;&amp;gt;&#x27;</span>)</span><br><span class="line">  str = str.replace(<span class="regexp">/&quot;/g</span>, <span class="string">&#x27;&amp;quto;&#x27;</span>)</span><br><span class="line">  str = str.replace(<span class="regexp">/&#x27;/g</span>, <span class="string">&#x27;&amp;#39;&#x27;</span>)</span><br><span class="line">  str = str.replace(<span class="regexp">/`/g</span>, <span class="string">&#x27;&amp;#96;&#x27;</span>)</span><br><span class="line">  str = str.replace(<span class="regexp">/\//g</span>, <span class="string">&#x27;&amp;#x2F;&#x27;</span>)</span><br><span class="line">  <span class="keyword">return</span> str</span><br><span class="line">&#125;</span><br></pre></td></tr></table></div></figure>
+<p>通过转义可以将攻击代码<script>alert(1)</script>变成</p>
+<figure class="highlight js"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// -&gt; &amp;lt;script&amp;gt;alert(1)&amp;lt;&amp;#x2F;script&amp;gt;</span></span><br><span class="line"><span class="built_in">escape</span>(<span class="string">&#x27;&lt;script&gt;alert(1)&lt;/script&gt;&#x27;</span>)</span><br></pre></td></tr></table></div></figure>
+<p>对于富文本框，显然不能通过上面的办法来转义所有字符，因为这样会把需要的格式也过滤掉。可以利用白名单机制，只允许安全的标签嵌入，例如：<a>，<img>，div等，白名单不仅仅适用于标签，也适用于属性。</p>
+
+        <h3 id="Web安全头"   >
+          <a href="#Web安全头" class="heading-link"><i class="fas fa-link"></i></a><a href="#Web安全头" class="headerlink" title="Web安全头"></a>Web安全头</h3>
+      <ul>
+<li>  CSP：W3C 的 Content Security Policy，简称 CSP，主要是用来定义页面可以加载哪些资源，减少 XSS 的发生。要配置 CSP , 需要对 CSP 的 policy 策略有了解，具体细节可以参考 CSP 是什么。</li>
+<li>  X-Download-Options: noopen：默认开启，禁用 IE 下下载框 Open 按钮，防止 IE 下下载文件默认被打开 XSS。</li>
+<li>  X-Content-Type-Options: nosniff：禁用 IE8 自动嗅探 mime 功能例如 text/plain 却当成 text/html 渲染，特别当本站点 server 的内容未必可信的时候。</li>
+<li>  X-XSS-Protection：IE 提供的一些 XSS 检测与防范，默认开启</li>
+</ul>
+<p>这里着重说一下CSP:<br>内容安全策略(CSP)是一个额外的安全层，用于检测并削弱某些特定类型的攻击，包括跨站脚本 (XSS) 和数据注入攻击等。无论是数据盗取、网站内容污染还是散发恶意软件，这些攻击都是主要的手段。</p>
+<p>说白了，就是对站点的资源加载定义不同的规则，<strong>允许哪些类型的资源可以从哪些源下进行加载</strong>，应用它的站点会仅仅执行从白名单域获取到的脚本文件。</p>
+<p>开启CSP:</p>
+<ol>
+<li> 服务器设置 HTTP Header 中的Content-Security-Policy</li>
+<li> 设置meta标签的方式<meta http-equiv="Content-Security-Policy"></li>
+</ol>
+<p>这里列举一下简单的例子</p>
+<ul>
+<li>  只允许加载本站资源:<code>Content-Security-Policy: default-src ‘self’</code></li>
+<li>  只允许加载 HTTPS 协议图片:<code>Content-Security-Policy: img-src https://*</code></li>
+<li>  允许加载任何来源框架:<code>Content-Security-Policy: child-src &#39;none&#39;</code></li>
+</ul>
+
+        <h3 id="Cookie-的-HTTPOnly"   >
+          <a href="#Cookie-的-HTTPOnly" class="heading-link"><i class="fas fa-link"></i></a><a href="#Cookie-的-HTTPOnly" class="headerlink" title="Cookie 的 HTTPOnly"></a>Cookie 的 HTTPOnly</h3>
+      <p>将重要的Cookie标记为HTTPOnly,浏览器将禁止页面的 Javascript 访问带有 HttpOnly 属性的 Cookie，因此不能通过客户端脚本读取和修改。</p>
+<p>攻击者可以通过注入恶意脚本获取用户的 Cookie 信息。通常 Cookie 中都包含了用户的登录凭证信息，攻击者在获取到 Cookie 之后，则可以发起 Cookie 劫持攻击。</p>
+<p>严格来说，HttpOnly 并非阻止 XSS 攻击，而是能阻止 XSS 攻击后的 Cookie 劫持攻击。</p>
+
+        <h1 id="CSRF攻击"   >
+          <a href="#CSRF攻击" class="heading-link"><i class="fas fa-link"></i></a><a href="#CSRF攻击" class="headerlink" title="CSRF攻击"></a>CSRF攻击</h1>
+      <p>CSRF的全称是Cross Site Request Forgery，即跨域请求伪造。</p>
+<p>主要在于用户访问受信任的站点并保存cookie在本地，此时用户处于登陆状态，在登陆状态下用户又去访问了一个恶意网站，恶意网站通过窃取的cookie冒充用户，从而达到能够请求站点的目的。</p>
+<p>按照请求类型可分为GET类型和PSOT类型的CSRF攻击。</p>
+<p>若按照攻击类型分类，可分享HTML CSRF攻击、JSON HiJacking 攻击和Flash CSRF攻击。</p>
+
+        <h2 id="HTML-CSRF攻击"   >
+          <a href="#HTML-CSRF攻击" class="heading-link"><i class="fas fa-link"></i></a><a href="#HTML-CSRF攻击" class="headerlink" title="HTML CSRF攻击"></a>HTML CSRF攻击</h2>
+      <p>这一类是最普遍的CSRF攻击，HTML中能设置src/href等链接地址的标签都可以发起一个GET请求，如a、img、iframe、script、video、audio等…</p>
+<p>还有通过JavaScript动态生成的标签对象或CSS对象发起的GET请求，而发出POST请求只能通过form提交。</p>
+
+        <h2 id="JSON-HiJacking-攻击"   >
+          <a href="#JSON-HiJacking-攻击" class="heading-link"><i class="fas fa-link"></i></a><a href="#JSON-HiJacking-攻击" class="headerlink" title="JSON HiJacking 攻击"></a>JSON HiJacking 攻击</h2>
+      <p>JSON HiJacking 非常经典，攻击过程是CSRF，不过是对AJAX 响应中 最长久的JSON数据进行的挟持攻击。</p>
+<p>一些应用中有的接口是使用JSONP来返回json数据的，如果在这个接口中没有做相应的防护，那么攻击者冒充用户请求从而获得敏感数据，是一件十分容易的事情。</p>
+<p>JSONP就是在前端定义一个函数并作为参数包含在script脚本的src中请求后端，后端处理完后将json数据包在函数参数里面并返回给前端。</p>
+<p>前端接收到后执行相应的函数获取数据。</p>
+<p>因此JSON HiJacking的流程大概是这样：</p>
+<ol>
+<li> 攻击者在虚假页面中加入script标签请求服务器，并且重写了回调函数。</li>
+<li> 用户访问恶意网站，恶意网站冒充用户向服务器发起了请求。</li>
+<li> 服务器返回了用户的敏感数据。</li>
+<li> 恶意网站执行自己重写的回调函数，在里面执行自己的恶意代码（一般是将用户的敏感数据发送到自己的服务器上）。</li>
+</ol>
+
+        <h2 id="防御CSRF"   >
+          <a href="#防御CSRF" class="heading-link"><i class="fas fa-link"></i></a><a href="#防御CSRF" class="headerlink" title="防御CSRF"></a>防御CSRF</h2>
+      
+        <h3 id="头部referer"   >
+          <a href="#头部referer" class="heading-link"><i class="fas fa-link"></i></a><a href="#头部referer" class="headerlink" title="头部referer"></a>头部referer</h3>
+      <p>http头中有一个字段叫’Referer’，它记录了该 HTTP 请求的来源地址。<br>譬如有这样一个网站”<span class="exturl"><a class="exturl__link"   target="_blank" rel="noopener" href="http://example.com/&quot;,%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%8F%AF%E4%BB%A5%E9%80%9A%E8%BF%87%E9%AA%8C%E8%AF%81%E8%AF%B7%E6%B1%82%E5%A4%B4%E9%83%A8%E6%90%BA%E5%B8%A6%E7%9A%84Referer%E5%AD%97%E6%AE%B5%E6%98%AF%E4%B8%8D%E6%98%AF%E4%BB%A5&#39;example.com&#39;%E5%9F%9F%E5%90%8D%E5%BC%80%E5%A4%B4%E7%9A%84%E3%80%82%E5%A6%82%E6%9E%9C%E6%98%AF%EF%BC%8C%E5%88%99%E8%AF%81%E6%98%8E%E8%AF%B7%E6%B1%82%E6%98%AF%E5%90%88%E6%B3%95%E7%9A%84%E3%80%82%E5%A6%82%E6%9E%9C%E4%B8%8D%E6%98%AF%EF%BC%8C%E5%88%99%E6%8B%92%E7%BB%9D%E8%AF%A5%E8%AF%B7%E6%B1%82%E3%80%82" >http://example.com/&quot;,服务器可以通过验证请求头部携带的Referer字段是不是以&#39;example.com&#39;域名开头的。如果是，则证明请求是合法的。如果不是，则拒绝该请求。</a><span class="exturl__icon"><i class="fas fa-external-link-alt"></i></span></span></p>
+
+        <h3 id="token"   >
+          <a href="#token" class="heading-link"><i class="fas fa-link"></i></a><a href="#token" class="headerlink" title="token"></a>token</h3>
+      <p>token机制是前端重要的一个身份验证机制，通过给每个用户颁发一个”令牌”来确定用户的身份。</p>
+<p>我们可以在请求头部自定义一个存放token信息的字段，该token由服务器下发给客户端，客户端每次请求时都携带该请求头。如果该请求头对应上了则放行请求，否则拒绝该请求。</p>
+</div><footer class="post-footer"><div class="post-ending ending"><div class="ending__text">------ END ------</div></div><div class="post-copyright copyright"><div class="copyright-author"><span class="copyright-author__name">Author: </span><span class="copyright-author__value"><a href="http://ivan-shork.github.io">Ivan</a></span></div><div class="copyright-link"><span class="copyright-link__name">Link: </span><span class="copyright-link__value"><a href="http://ivan-shork.github.io/2021/03/02/%E5%89%8D%E7%AB%AF%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98%E5%8F%8A%E7%AD%96%E7%95%A5/">http://ivan-shork.github.io/2021/03/02/%E5%89%8D%E7%AB%AF%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98%E5%8F%8A%E7%AD%96%E7%95%A5/</a></span></div><div class="copyright-notice"><span class="copyright-notice__name">Copyright: </span><span class="copyright-notice__value">All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" rel="external nofollow" target="_blank">BY-NC-SA</a> unless stating additionally</span></div></div><div class="post-tags"><span class="post-tags-item"><span class="post-tags-item__icon"><i class="fas fa-tag"></i></span><a class="post-tags-item__link" href="http://ivan-shork.github.io/tags/%E5%AE%89%E5%85%A8/">安全</a></span></div><nav class="post-paginator paginator"><div class="paginator-next"><a class="paginator-next__link" href="/2021/02/25/DOM-%E4%BA%8B%E4%BB%B6%E6%B5%81/"><span class="paginator-prev__text">DOM 事件流</span><span class="paginator-next__icon"><i class="fas fa-angle-right"></i></span></a></div></nav></footer></div></div></div><div class="sidebar-wrap" id="sidebar-wrap"><aside class="sidebar" id="sidebar"><div class="sidebar-nav"><span class="sidebar-nav-toc current">文章目录</span><span class="sidebar-nav-ov">站点概述</span></div><section class="sidebar-toc"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#XSS%E8%B7%A8%E7%AB%99%E8%84%9A%E6%9C%AC%E6%94%BB%E5%87%BB"><span class="toc-number">1.</span> <span class="toc-text">
+          XSS跨站脚本攻击</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#DOM-based%E5%9E%8B"><span class="toc-number">1.1.</span> <span class="toc-text">
+          DOM-based型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%8D%E5%B0%84%E5%9E%8B"><span class="toc-number">1.2.</span> <span class="toc-text">
+          反射型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8C%81%E4%B9%85%E6%80%A7"><span class="toc-number">1.3.</span> <span class="toc-text">
+          持久性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%98%B2%E5%BE%A1XSS"><span class="toc-number">1.4.</span> <span class="toc-text">
+          防御XSS</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BD%AC%E4%B9%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">
+          转义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Web%E5%AE%89%E5%85%A8%E5%A4%B4"><span class="toc-number">1.4.2.</span> <span class="toc-text">
+          Web安全头</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Cookie-%E7%9A%84-HTTPOnly"><span class="toc-number">1.4.3.</span> <span class="toc-text">
+          Cookie 的 HTTPOnly</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#CSRF%E6%94%BB%E5%87%BB"><span class="toc-number">2.</span> <span class="toc-text">
+          CSRF攻击</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#HTML-CSRF%E6%94%BB%E5%87%BB"><span class="toc-number">2.1.</span> <span class="toc-text">
+          HTML CSRF攻击</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JSON-HiJacking-%E6%94%BB%E5%87%BB"><span class="toc-number">2.2.</span> <span class="toc-text">
+          JSON HiJacking 攻击</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%98%B2%E5%BE%A1CSRF"><span class="toc-number">2.3.</span> <span class="toc-text">
+          防御CSRF</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%B4%E9%83%A8referer"><span class="toc-number">2.3.1.</span> <span class="toc-text">
+          头部referer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#token"><span class="toc-number">2.3.2.</span> <span class="toc-text">
+          token</span></a></li></ol></li></ol></li></ol></section><!-- ov = overview--><section class="sidebar-ov hide"><div class="sidebar-ov-author"><div class="sidebar-ov-author__avatar"><img class="sidebar-ov-author__avatar_img" src="/images/author-avatar.jpeg" alt="avatar"></div><p class="sidebar-ov-author__text">因上努力 果上随缘</p></div><div class="sidebar-ov-state"><a class="sidebar-ov-state-item sidebar-ov-state-item--posts" href="/archives/"><div class="sidebar-ov-state-item__count">28</div><div class="sidebar-ov-state-item__name">文章</div></a><a class="sidebar-ov-state-item sidebar-ov-state-item--tags" href="/tags/"><div class="sidebar-ov-state-item__count">8</div><div class="sidebar-ov-state-item__name">标签</div></a></div><div class="sidebar-ov-cc"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener" data-popover="Creative Commons" data-popover-pos="up"><img src="/images/cc-by-nc-sa.svg"></a></div></section><div class="sidebar-reading"><div class="sidebar-reading-info"><span class="sidebar-reading-info__text">You have read </span><span class="sidebar-reading-info__num">0</span><span class="sidebar-reading-info__perc">%</span></div><div class="sidebar-reading-line"></div></div></aside></div><div class="clearfix"></div></div></main><footer class="footer" id="footer"><div class="footer-inner"><div><span>Copyright © 2021</span><span class="footer__icon"><i class="fas fa-heart"></i></span><span>Ivan</span></div><div><span>Powered by <a href="http://hexo.io/" title="Hexo" target="_blank" rel="noopener">Hexo</a></span><span> v5.3.0</span><span class="footer__devider">|</span><span>Theme - <a href="https://github.com/liuyib/hexo-theme-stun/" title="Stun" target="_blank" rel="noopener">Stun</a></span><span> v2.6.2</span></div></div></footer><div class="loading-bar" id="loading-bar"><div class="loading-bar__progress"></div></div><div class="back2top" id="back2top"><span class="back2top__icon"><i class="fas fa-rocket"></i></span></div></div><script src="https://cdn.jsdelivr.net/npm/jquery@v3.4.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.ui.min.js"></script><script src="/js/utils.js?v=2.6.2"></script><script src="/js/stun-boot.js?v=2.6.2"></script><script src="/js/scroll.js?v=2.6.2"></script><script src="/js/header.js?v=2.6.2"></script><script src="/js/sidebar.js?v=2.6.2"></script></body></html>
